@@ -3,46 +3,43 @@
  - SPDX-License-Identifier: AGPL-3.0-or-later
  -->
 <template>
-	<fieldset id="ldapWizard4">
-		<div>
-			<p>
-				{{ t('user_ldap', 'Groups meeting these criteria are available in %s:', {themeName: theme.getName()}) }}
-			</p>
-			<p>
-				<label for="ldap_groupfilter_objectclass">
-					{{ t('user_ldap', 'Only these object classes:') }}
-				</label>
+	<fieldset class="ldap-wizard__groups">
+		{{ t('user_ldap', 'Groups meeting these criteria are available in {instanceName}:', {instanceName}) }}
 
-				<select id="ldap_groupfilter_objectclass"
-					multiple="multiple"
-					name="ldap_groupfilter_objectclass"
-					class="multiSelectPlugin" />
-			</p>
-			<p>
-				<label for="ldap_groupfilter_groups">
-					{{ t('user_ldap', 'Only from these groups:') }}
-				</label>
+		<div class="ldap-wizard__groups__line ldap-wizard__groups__filter-selection">
+			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectClass"
+				class="ldap-wizard__groups__group-filter-groups__select"
+				:options="['TODO']"
+				:disable="allowUserFilterGroupsSelection"
+				:input-label="t('user_ldap', 'Only these object classes:')"
+				:multiple="true" />
 
-				<input type="text" class="ldapManyGroupsSupport ldapManyGroupsSearch hidden" placeholder="t('user_ldap', 'Search groups')">
+			<!-- <input type="text" class="ldapManyGroupsSupport ldapManyGroupsSearch hidden" placeholder="t('user_ldap', 'Search groups')"> -->
+			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectClass"
+				class="ldap-wizard__groups__group-filter-groups__select"
+				:options="['TODO']"
+				:disable="allowUserFilterGroupsSelection"
+				:input-label="t('user_ldap', 'Only from these groups:')"
+				:multiple="true" />
+		</div>
 
-				<select id="ldap_groupfilter_groups"
-					multiple="multiple"
-					name="ldap_groupfilter_groups"
-					class="multiSelectPlugin" />
-			</p>
+		<!-- TODO -->
+		<div class="ldap-wizard__groups__line">
 			<p class="ldapManyGroupsSupport hidden">
-				<label />
 				<select class="ldapGroupList ldapGroupListAvailable"
 					multiple="multiple"
 					aria-describedby="ldapGroupListAvailable_instructions"
 					title="t('user_ldap', 'Available groups')" />
-			</p><p id="ldapGroupListAvailable_instructions" class="hidden-visually">
+			</p>
+			<p id="ldapGroupListAvailable_instructions" class="hidden-visually">
 				{{ t('user_ldap', 'Available groups') }}
 			</p>
-			<span class="buttonSpan">
-				<NcButton class="ldapGroupListSelect" type="button">&gt;</NcButton><br>
-				<NcButton class="ldapGroupListDeselect" type="button">&lt;</NcButton>
+
+			<span>
+				<NcButton class="ldapGroupListSelect">&gt;</NcButton><br>
+				<NcButton class="ldapGroupListDeselect">&lt;</NcButton>
 			</span>
+
 			<select class="ldapGroupList ldapGroupListSelected"
 				multiple="multiple"
 				aria-describedby="ldapGroupListSelected_instructions"
@@ -50,60 +47,90 @@
 			<p id="ldapGroupListSelected_instructions" class="hidden-visually">
 				{{ t('user_ldap', 'Selected groups') }}
 			</p>
-			<p>
-				<label><a id="toggleRawGroupFilter" class="ldapToggle">↓ {{ t('user_ldap', 'Edit LDAP Query') }}</a></label>
-			</p>
-			<p id="ldapReadOnlyGroupFilterContainer" class="hidden ldapReadOnlyFilterContainer">
-				<label>{{ t('user_ldap', 'LDAP Filter:') }}</label>
-				<span class="ldapFilterReadOnlyElement ldapInputColElement" />
-			</p>
-			<p id="rawGroupFilterContainer" class="invisible">
-				<textarea id="ldap_group_filter"
-					type="text"
-					name="ldap_group_filter"
-					placeholder="t('user_ldap', 'Edit LDAP Query')"
-					aria-describedby="rawGroupFilterContainer_instructions"
-					title="t('user_ldap', 'The filter specifies which LDAP groups shall have access to the {themeName} instance.', {themeName: theme.getName()}) }}" />
-			</p><p id="rawGroupFilterContainer_instructions" class="hidden-visually">
-				{{ t('user_ldap', 'The filter specifies which LDAP groups shall have access to the {themeName} instance.', {themeName: theme.getName()}) }}
-			</p>
+		</div>
 
-			<p />
-			<div class="ldapWizardInfo invisible">
-&nbsp;
+		<div class="ldap-wizard__groups__line ldap-wizard__groups__groups-filter">
+			<NcCheckboxRadioSwitch :checked.sync="editGroupsFilter">
+				{{ t('user_name', 'Edit LDAP Query') }}
+			</NcCheckboxRadioSwitch>
+
+			<div v-if="!editGroupsFilter">
+				<label>{{ t('user_name', 'LDAP Filter:') }}</label>
+				<span>{{ ldapConfig.ldapGroupsListFilter }}</span>
 			</div>
-			<p class="ldap_count">
-				<NcButton class="ldapGetEntryCount ldapGetGroupCount" name="ldapGetEntryCount" type="button">
-					{{ t('user_ldap', 'Verify settings and count the groups') }}
-				</NcButton>
-				<span id="ldap_group_count" />
-			</p>
+			<div v-else>
+				<NcTextArea :value.sync="ldapConfig.ldapGroupListFilter"
+					:placeholder="t('user_name', 'Edit LDAP Query')"
+					:helper-text="t('user_name', 'The filter specifies which LDAP groups shall have access to the {instanceName} instance.', {instanceName})" />
+			</div>
+		</div>
 
-			<!-- TODO: What is this -->
-			{{ wizardControls }}
+		<div class="ldap-wizard__groups__line ldap-wizard__groups__groups-count-check">
+			<NcButton @click="getGroupsCount">
+				{{ t('user_ldap', 'Verify settings and count the groups') }}
+			</NcButton>
+
+			<span v-if="groupsCount !== undefined">{{ t('user_ldap', "Groups count: {groupsCount}", { groupsCount }) }}</span>
 		</div>
 	</fieldset>
 </template>
 
 <script lang="ts" setup>
-import { defineProps, PropType } from 'vue'
+import { defineProps, computed, ref } from 'vue'
 
 import { t } from '@nextcloud/l10n'
-import { NcButton } from '@nextcloud/vue'
+import { NcButton, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 
-import { LDAPConfig } from '../../services/ldapConfigService';
+import { useLDAPConfigStore } from '../../store/config'
 
-const { ldapConfig } = defineProps({
-	ldapConfig: {
-		type: Object as PropType<LDAPConfig>,
+const ldapConfigStore = useLDAPConfigStore()
+
+const { ldapConfigId } = defineProps({
+	ldapConfigId: {
+		type: String,
 		required: true,
 	},
 })
 
-const wizardControls = ''
-const theme = {
-	getName() {
-		return 'TODO'
-	},
+const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
+
+const instanceName = 'TODO'
+
+const groupsCount = ref<number>(-1)
+const editGroupsFilter = ref(false)
+const allowUserFilterGroupsSelection = ref(false)
+
+/**
+ *
+ */
+async function getGroupsCount() {
+	groupsCount.value++ // TODO: Implement
 }
 </script>
+<style lang="scss" scoped>
+.ldap-wizard__groups {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+
+	&__line {
+		display: flex;
+		align-items: start;
+	}
+
+	&__filter-selection {
+		flex-direction: column;
+	}
+
+	&__groups-filter {
+		display: flex;
+		flex-direction: column;
+	}
+
+	&__groups-count-check {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+	}
+}
+</style>

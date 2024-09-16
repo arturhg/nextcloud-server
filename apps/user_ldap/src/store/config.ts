@@ -22,12 +22,17 @@ export function useLDAPConfigStore(...args) {
 		}),
 
 		actions: {
-			async create(config: LDAPConfig) {
-				const { configId, config: newConfig } = await createConfig(config)
-				Vue.set(this.ldapConfigs, configId, newConfig)
+			async create() {
+				const { configId, config } = await createConfig({ ...this.defaultLdapConfig })
+				Vue.set(this.ldapConfigs, configId, config)
 			},
 
-			async delete(configId: string) {
+			async copy(fromConfigId: string) {
+				const { configId, config } = await createConfig({ ...this.ldapConfigs[fromConfigId] })
+				Vue.set(this.ldapConfigs, configId, config)
+			},
+
+			async remove(configId: string) {
 				const result = await deleteConfig(configId)
 				if (result === true) {
 					Vue.delete(this.ldapConfigs, configId)
@@ -37,6 +42,18 @@ export function useLDAPConfigStore(...args) {
 			async update(configId: string, config: LDAPConfig) {
 				config = await updateConfig(configId, config)
 				Vue.set(this.ldapConfigs, configId, config)
+			},
+
+			async detectPort() {
+				 // TODO
+			},
+
+			async detectBaseDN() {
+				 // TODO
+			},
+
+			async testBaseDN() {
+				 // TODO
 			},
 		},
 	})
