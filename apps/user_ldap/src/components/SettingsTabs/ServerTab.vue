@@ -49,7 +49,7 @@
 				:placeholder="t('user_ldap', 'Password')"
 				autocomplete="off" />
 
-			<NcButton @click="ldapConfigStore.create(ldapConfig)">
+			<NcButton @click="ldapConfigStore.create">
 				{{ t('user_ldap', 'Save Credentials') }}
 			</NcButton>
 		</div>

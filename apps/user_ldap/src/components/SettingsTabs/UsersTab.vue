@@ -13,7 +13,7 @@
 				:options="['TODO']"
 				:input-label="t('user_name', 'Only these object classes:')"
 				:multiple="true" />
-			{{ t('user_name', 'The most common object classes for users are organizationalPerson, person, user, and inetOrgPerson. If you are not sure which object class to select, please consult your directory admin.') }}</span>
+			{{ t('user_name', 'The most common object classes for users are organizationalPerson, person, user, and inetOrgPerson. If you are not sure which object class to select, please consult your directory admin.') }}
 		</div>
 
 		<div class="ldap-wizard__users__line ldap-wizard__users__user-filter-groups">
@@ -39,7 +39,7 @@
 		<div class="ldap-wizard__users__line">
 			<p class="ldapManyGroupsSupport hidden">
 				<select class="ldapGroupList ldapGroupListAvailable"
-					multiple="multiple"
+					:multiple="true"
 					aria-describedby="ldapGroupListAvailable_instructions"
 					:title="t('user_name', 'Available groups')" />
 			</p>
@@ -53,7 +53,7 @@
 			</span>
 
 			<select class="ldapGroupList ldapGroupListSelected"
-				multiple="multiple"
+				:multiple="true"
 				aria-describedby="ldapGroupListSelected_instructions"
 				:title="t('user_name', 'Selected groups')" />
 
@@ -69,10 +69,10 @@
 
 			<div v-if="!editUserFilter">
 				<label>{{ t('user_name', 'LDAP Filter:') }}</label>
-				<span>{{ ldapConfig.ldapUserListFilter }}</span>
+				<span>{{ ldapConfig.ldapUserFilter }}</span>
 			</div>
 			<div v-else>
-				<NcTextArea :value.sync="ldapConfig.ldapUserListFilter"
+				<NcTextArea :value.sync="ldapConfig.ldapUserFilter"
 					:placeholder="t('user_name', 'Edit LDAP Query')"
 					:helper-text="t('user_name', 'The filter specifies which LDAP users shall have access to the {instanceName} instance.', { instanceName })" />
 			</div>

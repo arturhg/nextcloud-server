@@ -3,71 +3,253 @@
  - SPDX-License-Identifier: AGPL-3.0-or-later
  -->
 <template>
-	<fieldset id="ldapSettings-2">
-		<p>
-			<strong>{{ t('user_ldap', 'Internal Username') }}</strong>
-		</p>
-		<p class="ldapIndent">
-			{{ t('user_ldap', 'By default the internal username will be created from the UUID attribute. It makes sure that the username is unique and characters do not need to be converted. The internal username has the restriction that only these characters are allowed: [a-zA-Z0-9_.@-]. Other characters are replaced with their ASCII correspondence or simply omitted. On collisions a number will be added/increased. The internal username is used to identify a user internally. It is also the default name for the user home folder. It is also a part of remote URLs, for instance for all DAV services. With this setting, the default behavior can be overridden. Changes will have effect only on newly mapped (added) LDAP users. Leave it empty for default behavior.') }}
-		</p>
-		<p class="ldapIndent">
-			<label for="ldap_expert_username_attr">{{ t('user_ldap', 'Internal Username Attribute:') }}</label>
-			<input id="ldap_expert_username_attr"
-				type="text"
-				name="ldap_expert_username_attr"
-				:data-default="ldap_expert_username_attr_default">
-		</p>
-		<p><strong>{{ t('user_ldap', 'Override UUID detection') }}</strong></p>
-		<p class="ldapIndent">
-			{{ t('user_ldap', 'By default, the UUID attribute is automatically detected. The UUID attribute is used to doubtlessly identify LDAP users and groups. Also, the internal username will be created based on the UUID, if not specified otherwise above. You can override the setting and pass an attribute of your choice. You must make sure that the attribute of your choice can be fetched for both users and groups and it is unique. Leave it empty for default behavior. Changes will have effect only on newly mapped (added) LDAP users and groups.') }}
-		</p>
-		<p class="ldapIndent">
-			<label for="ldap_expert_uuid_user_attr">{{ t('user_ldap', 'UUID Attribute for Users:') }}</label>
-			<input id="ldap_expert_uuid_user_attr"
-				type="text"
-				name="ldap_expert_uuid_user_attr"
-				:data-default="ldap_expert_uuid_user_attr_default">
-		</p>
-		<p class="ldapIndent">
-			<label for="ldap_expert_uuid_group_attr">{{ t('user_ldap', 'UUID Attribute for Groups:') }}</label>
-			<input id="ldap_expert_uuid_group_attr"
-				type="text"
-				name="ldap_expert_uuid_group_attr"
-				:data-default="ldap_expert_uuid_group_attr_default">
-		</p>
-		<p><strong>{{ t('user_ldap', 'Username-LDAP User Mapping') }}</strong></p>
-		<p class="ldapIndent">
-			{{ t('user_ldap', 'Usernames are used to store and assign metadata. In order to precisely identify and recognize users, each LDAP user will have an internal username. This requires a mapping from username to LDAP user. The created username is mapped to the UUID of the LDAP user. Additionally the DN is cached as well to reduce LDAP interaction, but it is not used for identification. If the DN changes, the changes will be found. The internal username is used all over. Clearing the mappings will have leftovers everywhere. Clearing the mappings is not configuration sensitive, it affects all LDAP configurations! Never clear the mappings in a production environment, only in a testing or experimental stage.') }}
-		</p>
-		<p class="ldapIndent">
-			<button id="ldap_action_clear_user_mappings" type="button" name="ldap_action_clear_user_mappings">
-				{{ t('user_ldap', 'Clear Username-LDAP User Mapping') }}
-			</button><br><button id="ldap_action_clear_group_mappings" type="button" name="ldap_action_clear_group_mappings">
-				{{ t('user_ldap', 'Clear Groupname-LDAP Group Mapping') }}
-			</button>
-		</p>
+	<fieldset class="ldap-wizard__advanced">
+		<summary class="ldap-wizard__advanced__section">
+			<h3>{{ t('user_ldap', 'Connection Settings') }}</h3>
 
-		<!-- TODO: What is this -->
-		{{ settingControls }}
+			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapConfigurationActive"
+				value="1"
+				:aria-label="t('user_ldap', 'When unchecked, this configuration will be skipped.')">
+				{{ t('user_ldap', 'Configuration Active') }}
+			</NcCheckboxRadioSwitch>
+
+			<NcTextField autocomplete="off"
+				:label=" t('user_ldap', 'Backup (Replica) Host')"
+				:value.sync="ldapConfig.ldapBackupHost"
+				:helper-text="t('user_ldap', 'Give an optional backup host. It must be a replica of the main LDAP/AD server.')" />
+
+			<NcTextField type="number"
+				:value="ldapConfig.ldapBackupPort"
+				:label="t('user_ldap', 'Backup (Replica) Port') " />
+
+			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapOverrideMainServer"
+				value="1"
+				:aria-label="t('user_ldap', 'Only connect to the replica server.')"
+				">
+				{{ t('user_ldap', 'Disable Main Server') }}
+			</NcCheckboxRadioSwitch>
+
+			<NcCheckboxRadioSwitch :checked.sync=" ldapConfig.turnOffCertCheck"
+				:aria-label="t('user_ldap', 'Not recommended, use it for testing only! If connection only works with this option, import the LDAP server\'s SSL certificate in your {instanceName} server.', { instanceName })"
+				value="1">
+				{{ t('user_ldap', 'Turn off SSL certificate validation.') }}
+			</NcCheckboxRadioSwitch>
+
+			<NcTextField type="number"
+				:label="t('user_ldap', 'Cache Time-To-Live')"
+				:value="ldapConfig.ldapCacheTTL"
+				:helper-text="t('user_ldap', 'in seconds. A change empties the cache.')" />
+		</summary>
+
+		<summary class="ldap-wizard__advanced__section">
+			<h3>{{ t('user_ldap', 'Directory Settings') }}</h3>
+
+			<NcTextField autocomplete="off"
+				:value.sync="ldapConfig.ldapUserDisplayName"
+				:label="t('user_ldap', 'User Display Name Field')"
+				:helper-text="t('user_ldap', 'The LDAP attribute to use to generate the user\'s display name.')" />
+
+			<NcTextField autocomplete="off"
+				:value.sync="ldapConfig.ldapUserDisplayName2"
+				:label="t('user_ldap', '2nd User Display Name Field')"
+				:helper-text="t('user_ldap', 'Optional. An LDAP attribute to be added to the display name in brackets. Results in e.g. »John Doe (john.doe@example.org)«.')" />
+
+			<NcTextArea :value.sync="ldapConfig.ldapBaseUsers"
+				:placeholder="t('user_ldap', 'One User Base DN per line')"
+				:label="t('user_ldap', 'Base User Tree')" />
+
+			<NcTextArea :value.sync="ldapConfig.ldapAttributesForUserSearch"
+				:placeholder="t('user_ldap', 'Optional; one attribute per line')"
+				:label="t('user_ldap', 'Base User Tree')"
+				:helper-text="t('user_ldap', 'User Search Attributes')" />
+
+			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.markRemnantsAsDisabled"
+				value="1"
+				:aria-label="t('user_ldap', 'When switched on, users imported from LDAP which are then missing will be disabled')">
+				{{ t('user_ldap', 'Disable users missing from LDAP') }}
+			</NcCheckboxRadioSwitch>
+
+			<NcTextField autocomplete="off"
+				:value.sync="ldapConfig.ldapGroupDisplayName"
+				:label="t('user_ldap', 'Group Display Name Field')"
+				:title="t('user_ldap', 'The LDAP attribute to use to generate the groups\'s display name.')" />
+
+			<NcTextArea :value.sync="ldapConfig.ldapBaseGroups"
+				:placeholder="t('user_ldap', 'One Group Base DN per line')"
+				:label="t('user_ldap', 'Base Group Tree')" />
+
+			<NcTextArea :value.sync="ldapConfig.ldapAttributesForGroupSearch"
+				:placeholder="t('user_ldap', 'Optional; one attribute per line')"
+				:label="t('user_ldap', 'Group Search Attributes')" />
+
+			<!-- TODO -->
+			<!-- <label for="ldap_group_member_assoc_attribute">{{ t('user_ldap', 'Group-Member association') }}</label>
+			<select id="ldap_group_member_assoc_attribute" :value="ldapConfig.ldapGroupMemberAssocAttribute">
+				<option value="uniqueMember" :selected="ldap_group_member_assoc_attribute === 'uniqueMember'">
+					{{ t('user_ldap', 'uniqueMember') }}
+				</option>
+				<option value="memberUid" :selected="ldap_group_member_assoc_attribute === 'memberUid'">
+					{{ t('user_ldap', 'memberUid') }}
+				</option>
+				<option value="member" :selected="ldap_group_member_assoc_attribute === 'member'">
+					{{ t('user_ldap', 'member (AD)') }}
+				</option>
+				<option value="gidNumber" :selected="ldap_group_member_assoc_attribute === 'gidNumber'">
+					{{ t('user_ldap', 'gidNumber') }}
+				</option>
+				<option value="zimbraMailForwardingAddress"
+					:selected="ldap_group_member_assoc_attribute === 'zimbraMailForwardingAddress'">
+					{{ t('user_ldap', 'zimbraMailForwardingAddress') }}
+				</option>
+			</select> -->
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Dynamic Group Member URL')"
+				:value.sync="ldapConfig.ldapDynamicGroupMemberURL"
+				:helper-text="t('user_ldap', 'The LDAP attribute that on group objects contains an LDAP search URL that determines what objects belong to the group. (An empty setting disables dynamic group membership functionality.)')" />
+
+			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapNestedGroups"
+				value="1"
+				:aria-label="t('user_ldap', 'When switched on, groups that contain groups are supported. (Only works if the group member attribute contains DNs.)')">
+				{{ t('user_ldap', 'Nested Groups') }}
+			</NcCheckboxRadioSwitch>
+
+			<NcTextField type="number"
+				:label="t('user_ldap', 'Paging chunksize')"
+				:value.sync="ldapConfig.ldapPagingSize"
+				:helper-text="t('user_ldap', 'Chunksize used for paged LDAP searches that may return bulky results like user or group enumeration. (Setting it 0 disables paged LDAP searches in those situations.)')" />
+
+			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.turnOnPasswordChange"
+				value="1"
+				:aria-label="t('user_ldap', 'Allow LDAP users to change their password and allow Super Administrators and Group Administrators to change the password of their LDAP users. Only works when access control policies are configured accordingly on the LDAP server. As passwords are sent in plaintext to the LDAP server, transport encryption must be used and password hashing should be configured on the LDAP server.')">
+				{{ t('user_ldap', 'Enable LDAP password changes per user') }}
+			</NcCheckboxRadioSwitch>
+			<span class="tablecell">
+				{{ t('user_ldap', '(New password is sent as plain text to LDAP)') }}
+			</span>
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Default password policy DN')"
+				:value.sync="ldapConfig.ldapDefaultPPolicyDN"
+				:helper-text="t('user_ldap', 'The DN of a default password policy that will be used for password expiry handling. Works only when LDAP password changes per user are enabled and is only supported by OpenLDAP. Leave empty to disable password expiry handling.')" />
+		</summary>
+
+		<summary class="ldap-wizard__advanced__section">
+			<h3>{{ t('user_ldap', 'Special Attributes') }}</h3>
+
+			<NcTextField autocomplete="off"
+				:value.sync="ldapConfig.ldapQuotaAttribute"
+				:label="t('user_ldap', 'Quota Field')"
+				:helper-text="t('user_ldap', 'Leave empty for user\'s default quota. Otherwise, specify an LDAP/AD attribute.')" />
+
+			<NcTextField autocomplete="off"
+				:value.sync="ldapConfig.ldapQuotaDefault"
+				:label="t('user_ldap', 'Quota Default')"
+				:helper-text="t('user_ldap', 'Override default quota for LDAP users who do not have a quota set in the Quota Field.')" />
+
+			<NcTextField autocomplete="off"
+				:value.sync="ldapConfig.ldapEmailAttribute"
+				:label="t('user_ldap', 'Email Field')"
+				:helper-text="t('user_ldap', 'Set the user\'s email from their LDAP attribute. Leave it empty for default behaviour.')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'User Home Folder Naming Rule')"
+				:value.sync="ldapConfig.homeFolderNamingRule"
+				:helper-text="t('user_ldap', 'Leave empty for username (default). Otherwise, specify an LDAP/AD attribute.')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', '`$home` Placeholder Field')"
+				:value.sync="ldapConfig.ldapExtStorageHomeAttribute"
+				:helper-text="t('user_ldap', '$home in an external storage configuration will be replaced with the value of the specified attribute')" />
+		</summary>
+
+		<summary class="ldap-wizard__advanced__section">
+			<h3>{{ t('user_ldap', 'User Profile Attributes') }}</h3>
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Phone Field')"
+				:value.sync="ldapConfig.ldapAttributePhone"
+				:helper-text="t('user_ldap', 'User profile Phone will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Website Field')"
+				:value.sync="ldapConfig.ldapAttributeWebsite"
+				:helper-text="t('user_ldap', 'User profile Website will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Address Field')"
+				:value.sync="ldapConfig.ldapAttributeAddress"
+				:helper-text="t('user_ldap', 'User profile Address will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Twitter Field')"
+				:value.sync="ldapConfig.ldapAttributeTwitter"
+				:helper-text="t('user_ldap', 'User profile Twitter will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Fediverse Field')"
+				:value.sync="ldapConfig.ldapAttributeFediverse"
+				:helper-text="t('user_ldap', 'User profile Fediverse will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Organisation Field')"
+				:value.sync="ldapConfig.ldapAttributeOrganisation"
+				:helper-text="t('user_ldap', 'User profile Organisation will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Role Field')"
+				:value.sync="ldapConfig.ldapAttributeRole"
+				:helper-text="t('user_ldap', 'User profile Role will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Headline Field')"
+				:value.sync="ldapConfig.ldapAttributeHeadline"
+				:helper-text="t('user_ldap', 'User profile Headline will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Biography Field')"
+				:value.sync="ldapConfig.ldapAttributeBiography"
+				:helper-text="t('user_ldap', 'User profile Biography will be set from the specified attribute')" />
+
+			<NcTextField autocomplete="off"
+				:label="t('user_ldap', 'Birthdate Field')"
+				:value.sync="ldapConfig.ldapAttributeBirthDate"
+				:helper-text="t('user_ldap', 'User profile Date of birth will be set from the specified attribute')" />
+		</summary>
 	</fieldset>
 </template>
 
 <script lang="ts" setup>
-import { defineProps, PropType } from 'vue'
+import { defineProps, computed } from 'vue'
 
 import { t } from '@nextcloud/l10n'
+import { NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 
-import { LDAPConfig } from '../../services/ldapConfigService';
+import { useLDAPConfigStore } from '../../store/config'
 
-const { ldapConfig } = defineProps({
-	ldapConfig: {
-		type: Object as PropType<LDAPConfig>,
+const ldapConfigStore = useLDAPConfigStore()
+
+const { ldapConfigId } = defineProps({
+	ldapConfigId: {
+		type: String,
 		required: true,
 	},
 })
 
-const ldap_expert_username_attr_default = ''
-const ldap_expert_uuid_user_attr_default = ''
-const ldap_expert_uuid_group_attr_default = ''
-const settingControls = ''
+const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
+
+const instanceName = 'TODO'
 </script>
+<style lang="scss" scoped>
+.ldap-wizard__advanced {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+
+	&__section {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+}
+</style>

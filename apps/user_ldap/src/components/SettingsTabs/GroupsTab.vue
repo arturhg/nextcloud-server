@@ -7,7 +7,7 @@
 		{{ t('user_ldap', 'Groups meeting these criteria are available in {instanceName}:', {instanceName}) }}
 
 		<div class="ldap-wizard__groups__line ldap-wizard__groups__filter-selection">
-			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectClass"
+			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectclass"
 				class="ldap-wizard__groups__group-filter-groups__select"
 				:options="['TODO']"
 				:disable="allowUserFilterGroupsSelection"
@@ -15,7 +15,7 @@
 				:multiple="true" />
 
 			<!-- <input type="text" class="ldapManyGroupsSupport ldapManyGroupsSearch hidden" placeholder="t('user_ldap', 'Search groups')"> -->
-			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectClass"
+			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectclass"
 				class="ldap-wizard__groups__group-filter-groups__select"
 				:options="['TODO']"
 				:disable="allowUserFilterGroupsSelection"
@@ -27,7 +27,7 @@
 		<div class="ldap-wizard__groups__line">
 			<p class="ldapManyGroupsSupport hidden">
 				<select class="ldapGroupList ldapGroupListAvailable"
-					multiple="multiple"
+					:multiple="true"
 					aria-describedby="ldapGroupListAvailable_instructions"
 					title="t('user_ldap', 'Available groups')" />
 			</p>
@@ -41,7 +41,7 @@
 			</span>
 
 			<select class="ldapGroupList ldapGroupListSelected"
-				multiple="multiple"
+				:multiple="true"
 				aria-describedby="ldapGroupListSelected_instructions"
 				title="t('user_ldap', 'Selected groups')" />
 			<p id="ldapGroupListSelected_instructions" class="hidden-visually">
@@ -56,10 +56,10 @@
 
 			<div v-if="!editGroupsFilter">
 				<label>{{ t('user_name', 'LDAP Filter:') }}</label>
-				<span>{{ ldapConfig.ldapGroupsListFilter }}</span>
+				<span>{{ ldapConfig.ldapGroupFilter }}</span>
 			</div>
 			<div v-else>
-				<NcTextArea :value.sync="ldapConfig.ldapGroupListFilter"
+				<NcTextArea :value.sync="ldapConfig.ldapGroupFilter"
 					:placeholder="t('user_name', 'Edit LDAP Query')"
 					:helper-text="t('user_name', 'The filter specifies which LDAP groups shall have access to the {instanceName} instance.', {instanceName})" />
 			</div>

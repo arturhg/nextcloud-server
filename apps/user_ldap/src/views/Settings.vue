@@ -47,7 +47,8 @@
 
 			<!-- TODO: change ldapwarning -->
 			<div v-if="!ldapModuleInstalled" class="ldapwarning">
-				{{ t('user_ldap', '<b>Warning:</b> The PHP LDAP module is not installed, the backend will not work. Please ask your system administrator to install it.') }}
+				{{ t('user_ldap', '<b>Warning:</b>') }}
+				{{ t('user_ldap', 'The PHP LDAP module is not installed, the backend will not work. Please ask your system administrator to install it.') }}
 			</div>
 
 			<ServerTab v-if="selectedTab === 'server'" :ldap-config-id="selectedConfigId" />
@@ -87,8 +88,8 @@ const leftTabs = {
 }
 
 const rightTabs = {
-	expert: t('user_ldap', 'Expert'),
 	advanced: t('user_ldap', 'Advanced'),
+	expert: t('user_ldap', 'Expert'),
 }
 
 const ldapConfigStore = useLDAPConfigStore()

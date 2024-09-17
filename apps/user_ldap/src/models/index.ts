@@ -55,4 +55,17 @@ export type LDAPConfig = {
 	ldapPagingSize: string // Example: 500
 	turnOnPasswordChange: string // Example: 1
 	ldapDynamicGroupMemberURL: string
+	markRemnantsAsDisabled: string // Example: 1
+	ldapDefaultPPolicyDN: string
+	ldapExtStorageHomeAttribute: string
+	ldapAttributePhone: string
+	ldapAttributeWebsite: string
+	ldapAttributeAddress: string
+	ldapAttributeTwitter: string
+	ldapAttributeFediverse: string
+	ldapAttributeOrganisation: string
+	ldapAttributeRole: string
+	ldapAttributeHeadline: string
+	ldapAttributeBiography: string
+	ldapAttributeBirthDate: string
 }

@@ -7,12 +7,12 @@
 		{{ t('user_ldap', 'When logging in, {instanceName} will find the user based on the following attributes:', { instanceName }) }}
 
 		<div class="ldap-wizard__login__line ldap-wizard__login__login-attributes">
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapUsername"
+			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapAgentName"
 				:aria-label="t('user_ldap', 'Allows login against the LDAP/AD username, which is either `uid` or `sAMAccountName` and will be detected.')">
 				{{ t('user_ldap', 'LDAP/AD Username') }}
 			</NcCheckboxRadioSwitch>
 
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapEmail"
+			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapLoginFilterEmail"
 				:aria-label="t('user_ldap', 'Allows login against an email attribute. `mail` and `mailPrimaryAddress` allowed.')">
 				{{ t('user_ldap', 'LDAP/AD Email Address') }}
 			</NcCheckboxRadioSwitch>
@@ -30,10 +30,10 @@
 
 			<div v-if="!editUserLoginFilter">
 				<label>{{ t('user_name', 'LDAP Filter:') }}</label>
-				<span>{{ ldapConfig.ldapUserLoginFilter }}</span>
+				<span>{{ ldapConfig.ldapLoginFilter }}</span>
 			</div>
 			<div v-else>
-				<NcTextArea :value.sync="ldapConfig.ldapUserLoginFilter"
+				<NcTextArea :value.sync="ldapConfig.ldapLoginFilter"
 					:placeholder="t('user_name', 'Edit LDAP Query')"
 					:helper-text="t('user_name', 'Defines the filter to apply, when login is attempted. `%%uid` replaces the username in the login action. Example: `uid=%%uid`')" />
 			</div>
