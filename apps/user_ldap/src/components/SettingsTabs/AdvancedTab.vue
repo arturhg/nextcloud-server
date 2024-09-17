@@ -7,9 +7,9 @@
 		<summary class="ldap-wizard__advanced__section">
 			<h3>{{ t('user_ldap', 'Connection Settings') }}</h3>
 
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapConfigurationActive"
-				value="1"
-				:aria-label="t('user_ldap', 'When unchecked, this configuration will be skipped.')">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapConfigurationActive === '1'"
+				:aria-label="t('user_ldap', 'When unchecked, this configuration will be skipped.')"
+				@update:checked="ldapConfig.ldapConfigurationActive = $event ? '1' : '0'">
 				{{ t('user_ldap', 'Configuration Active') }}
 			</NcCheckboxRadioSwitch>
 
@@ -22,16 +22,15 @@
 				:value="ldapConfig.ldapBackupPort"
 				:label="t('user_ldap', 'Backup (Replica) Port') " />
 
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapOverrideMainServer"
-				value="1"
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapOverrideMainServer === '1'"
 				:aria-label="t('user_ldap', 'Only connect to the replica server.')"
-				">
+				@update:checked="ldapConfig.ldapOverrideMainServer = $event ? '1' : '0'">
 				{{ t('user_ldap', 'Disable Main Server') }}
 			</NcCheckboxRadioSwitch>
 
-			<NcCheckboxRadioSwitch :checked.sync=" ldapConfig.turnOffCertCheck"
+			<NcCheckboxRadioSwitch :checked="ldapConfig.turnOffCertCheck === '1'"
 				:aria-label="t('user_ldap', 'Not recommended, use it for testing only! If connection only works with this option, import the LDAP server\'s SSL certificate in your {instanceName} server.', { instanceName })"
-				value="1">
+				@update:checked="ldapConfig.turnOffCertCheck = $event ? '1' : '0'">
 				{{ t('user_ldap', 'Turn off SSL certificate validation.') }}
 			</NcCheckboxRadioSwitch>
 
@@ -63,9 +62,9 @@
 				:label="t('user_ldap', 'Base User Tree')"
 				:helper-text="t('user_ldap', 'User Search Attributes')" />
 
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.markRemnantsAsDisabled"
-				value="1"
-				:aria-label="t('user_ldap', 'When switched on, users imported from LDAP which are then missing will be disabled')">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.markRemnantsAsDisabled === '1'"
+				:aria-label="t('user_ldap', 'When switched on, users imported from LDAP which are then missing will be disabled')"
+				@update:checked="ldapConfig.markRemnantsAsDisabled = $event ? '1' : '0'">
 				{{ t('user_ldap', 'Disable users missing from LDAP') }}
 			</NcCheckboxRadioSwitch>
 
@@ -108,9 +107,9 @@
 				:value.sync="ldapConfig.ldapDynamicGroupMemberURL"
 				:helper-text="t('user_ldap', 'The LDAP attribute that on group objects contains an LDAP search URL that determines what objects belong to the group. (An empty setting disables dynamic group membership functionality.)')" />
 
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapNestedGroups"
-				value="1"
-				:aria-label="t('user_ldap', 'When switched on, groups that contain groups are supported. (Only works if the group member attribute contains DNs.)')">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapNestedGroups === '1'"
+				:aria-label="t('user_ldap', 'When switched on, groups that contain groups are supported. (Only works if the group member attribute contains DNs.)')"
+				@update:checked="ldapConfig.ldapNestedGroups = $event ? '1' : '0'">
 				{{ t('user_ldap', 'Nested Groups') }}
 			</NcCheckboxRadioSwitch>
 
@@ -119,9 +118,9 @@
 				:value.sync="ldapConfig.ldapPagingSize"
 				:helper-text="t('user_ldap', 'Chunksize used for paged LDAP searches that may return bulky results like user or group enumeration. (Setting it 0 disables paged LDAP searches in those situations.)')" />
 
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.turnOnPasswordChange"
-				value="1"
-				:aria-label="t('user_ldap', 'Allow LDAP users to change their password and allow Super Administrators and Group Administrators to change the password of their LDAP users. Only works when access control policies are configured accordingly on the LDAP server. As passwords are sent in plaintext to the LDAP server, transport encryption must be used and password hashing should be configured on the LDAP server.')">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.turnOnPasswordChange === '1'"
+				:aria-label="t('user_ldap', 'Allow LDAP users to change their password and allow Super Administrators and Group Administrators to change the password of their LDAP users. Only works when access control policies are configured accordingly on the LDAP server. As passwords are sent in plaintext to the LDAP server, transport encryption must be used and password hashing should be configured on the LDAP server.')"
+				@update:checked="ldapConfig.turnOnPasswordChange = $event ? '1' : '0'">
 				{{ t('user_ldap', 'Enable LDAP password changes per user') }}
 			</NcCheckboxRadioSwitch>
 			<span class="tablecell">

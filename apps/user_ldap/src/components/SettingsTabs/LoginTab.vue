@@ -7,13 +7,15 @@
 		{{ t('user_ldap', 'When logging in, {instanceName} will find the user based on the following attributes:', { instanceName }) }}
 
 		<div class="ldap-wizard__login__line ldap-wizard__login__login-attributes">
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapAgentName"
-				:aria-label="t('user_ldap', 'Allows login against the LDAP/AD username, which is either `uid` or `sAMAccountName` and will be detected.')">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapAgentName === '1'"
+				:aria-label="t('user_ldap', 'Allows login against the LDAP/AD username, which is either `uid` or `sAMAccountName` and will be detected.')"
+				@update:checked="ldapConfig.ldapAgentName = $event ? '1' : '0'">
 				{{ t('user_ldap', 'LDAP/AD Username') }}
 			</NcCheckboxRadioSwitch>
 
-			<NcCheckboxRadioSwitch :checked.sync="ldapConfig.ldapLoginFilterEmail"
-				:aria-label="t('user_ldap', 'Allows login against an email attribute. `mail` and `mailPrimaryAddress` allowed.')">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapLoginFilterEmail === '1'"
+				:aria-label="t('user_ldap', 'Allows login against an email attribute. `mail` and `mailPrimaryAddress` allowed.')"
+				@update:checked="ldapConfig.ldapLoginFilterEmail = $event ? '1' : '0'">
 				{{ t('user_ldap', 'LDAP/AD Email Address') }}
 			</NcCheckboxRadioSwitch>
 
