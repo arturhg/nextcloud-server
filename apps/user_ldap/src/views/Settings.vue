@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import Plus from 'vue-material-design-icons/Plus.vue'
 
@@ -104,6 +104,11 @@ const selectOptions = Object.entries(ldapConfigStore.ldapConfigs).map(([configId
 	id: configId,
 	label: `${configId}: ${config.ldapHost}`,
 }))
+
+ldapConfigStore.$subscribe((mutation, state) => {
+	ldapConfigStore.update(selectedConfigId.value)
+	console.log('mutation', mutation, state)
+})
 
 </script>
 <style lang="scss" scoped>

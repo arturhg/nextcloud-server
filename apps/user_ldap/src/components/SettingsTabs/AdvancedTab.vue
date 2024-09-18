@@ -4,8 +4,8 @@
  -->
 <template>
 	<fieldset class="ldap-wizard__advanced">
-		<summary class="ldap-wizard__advanced__section">
-			<h3>{{ t('user_ldap', 'Connection Settings') }}</h3>
+		<details name="ldap-wizard__advanced__section" class="ldap-wizard__advanced__section">
+			<summary><h3>{{ t('user_ldap', 'Connection Settings') }}</h3></summary>
 
 			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapConfigurationActive === '1'"
 				:aria-label="t('user_ldap', 'When unchecked, this configuration will be skipped.')"
@@ -38,10 +38,10 @@
 				:label="t('user_ldap', 'Cache Time-To-Live')"
 				:value="ldapConfig.ldapCacheTTL"
 				:helper-text="t('user_ldap', 'in seconds. A change empties the cache.')" />
-		</summary>
+		</details>
 
-		<summary class="ldap-wizard__advanced__section">
-			<h3>{{ t('user_ldap', 'Directory Settings') }}</h3>
+		<details name="ldap-wizard__advanced__section" class="ldap-wizard__advanced__section">
+			<summary><h3>{{ t('user_ldap', 'Directory Settings') }}</h3></summary>
 
 			<NcTextField autocomplete="off"
 				:value.sync="ldapConfig.ldapUserDisplayName"
@@ -131,10 +131,10 @@
 				:label="t('user_ldap', 'Default password policy DN')"
 				:value.sync="ldapConfig.ldapDefaultPPolicyDN"
 				:helper-text="t('user_ldap', 'The DN of a default password policy that will be used for password expiry handling. Works only when LDAP password changes per user are enabled and is only supported by OpenLDAP. Leave empty to disable password expiry handling.')" />
-		</summary>
+		</details>
 
-		<summary class="ldap-wizard__advanced__section">
-			<h3>{{ t('user_ldap', 'Special Attributes') }}</h3>
+		<details name="ldap-wizard__advanced__section" class="ldap-wizard__advanced__section">
+			<summary><h3>{{ t('user_ldap', 'Special Attributes') }}</h3></summary>
 
 			<NcTextField autocomplete="off"
 				:value.sync="ldapConfig.ldapQuotaAttribute"
@@ -160,10 +160,10 @@
 				:label="t('user_ldap', '`$home` Placeholder Field')"
 				:value.sync="ldapConfig.ldapExtStorageHomeAttribute"
 				:helper-text="t('user_ldap', '$home in an external storage configuration will be replaced with the value of the specified attribute')" />
-		</summary>
+		</details>
 
-		<summary class="ldap-wizard__advanced__section">
-			<h3>{{ t('user_ldap', 'User Profile Attributes') }}</h3>
+		<details name="ldap-wizard__advanced__section" class="ldap-wizard__advanced__section">
+			<summary><h3>{{ t('user_ldap', 'User Profile Attributes') }}</h3></summary>
 
 			<NcTextField autocomplete="off"
 				:label="t('user_ldap', 'Phone Field')"
@@ -214,7 +214,7 @@
 				:label="t('user_ldap', 'Birthdate Field')"
 				:value.sync="ldapConfig.ldapAttributeBirthDate"
 				:helper-text="t('user_ldap', 'User profile Date of birth will be set from the specified attribute')" />
-		</summary>
+		</details>
 	</fieldset>
 </template>
 
@@ -249,6 +249,24 @@ const instanceName = 'TODO'
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
+
+		summary {
+
+			h3 {
+				margin: 0;
+				display: inline;
+				cursor: pointer;
+				color: var(--color-text-lighter);
+				font-size: 16px;
+
+			}
+		}
+
+		&:hover, &[open] {
+			h3 {
+				color: var(--color-text-light);
+			}
+		}
 	}
 }
 </style>

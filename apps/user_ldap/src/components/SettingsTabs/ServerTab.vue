@@ -29,7 +29,7 @@
 					:placeholder="t('user_ldap', 'Port')"
 					type="number"
 					autocomplete="off" />
-				<NcButton @click="detectPort">
+				<NcButton :disabled="currentWizardActions.includes('guessPortAndTLS')" @click="guessPortAndTLS">
 					{{ t('user_ldap', 'Detect Port') }}
 				</NcButton>
 			</div>
@@ -60,17 +60,18 @@
 				:placeholder="t('user_ldap', 'One Base DN per line')"
 				:helper-text="t('user_ldap', 'You can specify Base DN for users and groups in the Advanced tab')" />
 
-			<NcButton @click="detectBaseDN">
+			<NcButton :disabled="currentWizardActions.includes('guessBaseDN')" @click="guessBaseDN">
 				{{ t('user_ldap', 'Detect Base DN') }}
 			</NcButton>
-			<NcButton @click="testBaseDN">
+			<NcButton :disabled="currentWizardActions.includes('countInBaseDN')" @click="countInBaseDN">
 				{{ t('user_ldap', 'Test Base DN') }}
 			</NcButton>
 		</div>
 
 		<div class="ldap-wizard__server__line">
-			<NcCheckboxRadioSwitch :checked.sync="advancedAdmin"
-				:aria-label="t('user_ldap', 'Avoids automatic LDAP requests. Better for bigger setups, but requires some LDAP knowledge.')">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapExperiencedAdmin === '1'"
+				:aria-label="t('user_ldap', 'Avoids automatic LDAP requests. Better for bigger setups, but requires some LDAP knowledge.')"
+				@update:checked="ldapConfig.ldapExperiencedAdmin = $event ? '1' : '0'">
 				{{ t('user_ldap', 'Manually enter LDAP filters (recommended for large directories)') }}
 			</NcCheckboxRadioSwitch>
 		</div>
@@ -87,8 +88,7 @@ import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 
 import { useLDAPConfigStore } from '../../store/config'
-
-const ldapConfigStore = useLDAPConfigStore()
+import { callWizard } from '../../services/ldapConfigService'
 
 const { ldapConfigId } = defineProps({
 	ldapConfigId: {
@@ -97,31 +97,42 @@ const { ldapConfigId } = defineProps({
 	},
 })
 
+const ldapConfigStore = useLDAPConfigStore()
+
 const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
-
-// TODO: use this
-const advancedAdmin = ref(false)
+const usersCount = ref<number|undefined>(undefined)
+const currentWizardActions = ref<string[]>([])
 
 /**
  *
  */
-async function detectPort() {
-	// TODO
+async function guessPortAndTLS() {
+	currentWizardActions.value.push('guessPortAndTLS')
+	const { changes: { ldap_port: ldapPort } } = await callWizard('guessPortAndTLS', ldapConfigId)
+	ldapConfig.value.ldapPort = ldapPort
+	currentWizardActions.value.splice(currentWizardActions.value.indexOf('guessPortAndTLS'), 1)
 }
 
 /**
  *
  */
-async function detectBaseDN() {
-	// TODO
+async function guessBaseDN() {
+	currentWizardActions.value.push('guessBaseDN')
+	const { changes: { ldap_base: ldapBase } } = await callWizard('guessBaseDN', ldapConfigId)
+	ldapConfig.value.ldapBase = ldapBase
+	currentWizardActions.value.splice(currentWizardActions.value.indexOf('guessPortAndTLS'), 1)
 }
 
 /**
  *
  */
-async function testBaseDN() {
-	// TODO
+async function countInBaseDN() {
+	currentWizardActions.value.push('countInBaseDN')
+	const { changes: { ldap_test_base: ldapTestBase } } = await callWizard('countInBaseDN', ldapConfigId)
+	usersCount.value = ldapTestBase
+	currentWizardActions.value.splice(currentWizardActions.value.indexOf('guessPortAndTLS'), 1)
 }
+
 </script>
 <style lang="scss" scoped>
 .ldap-wizard__server {
