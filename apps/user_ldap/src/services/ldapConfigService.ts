@@ -9,17 +9,12 @@ import axios from '@nextcloud/axios'
 import { getAppRootUrl, generateOcsUrl } from '@nextcloud/router'
 
 import type { LDAPConfig } from '../models'
+import { useLDAPConfigStore } from '../store/configs'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 
-const APP_URL = getAppRootUrl('user_ldap')
-const AJAX_ENDPOINT = path.join(APP_URL, '/ajax')
+const AJAX_ENDPOINT = path.join(getAppRootUrl('user_ldap'), '/ajax')
 
-const OCS_APP_URL = generateOcsUrl('apps/user_ldap')
-const CONFIG_API_ENDPOINT = path.join(OCS_APP_URL, '/api/v1/config')
-
-console.log(OCS_APP_URL)
-console.log(CONFIG_API_ENDPOINT)
-
-type WizardAction =
+export type WizardAction =
 	'guessPortAndTLS' |
 	'guessBaseDN' |
 	'detectEmailAttribute' |
@@ -42,14 +37,9 @@ type WizardAction =
  *
  * @param config
  */
-export async function createConfig(
-	config: LDAPConfig,
-): Promise<{ configId: string; config: LDAPConfig }> {
-	const response = await axios.post(CONFIG_API_ENDPOINT, config)
-	return {
-		configId: response.data.configId as string,
-		config: response.data.config as LDAPConfig,
-	}
+export async function createConfig(config: LDAPConfig) {
+	const response = await axios.post(generateOcsUrl('apps/user_ldap/api/v1/config'), config)
+	return response.data.ocs.data.configID as string
 }
 
 /**
@@ -57,14 +47,15 @@ export async function createConfig(
  * @param configId
  * @param config
  */
-export async function updateConfig(
-	configId: string,
-	config: LDAPConfig,
-): Promise<LDAPConfig> {
+export async function updateConfig(): Promise<LDAPConfig> {
+	const configId = useLDAPConfigStore().selectedConfigId
+	const config = useLDAPConfigStore().selectedConfig
+
 	const response = await axios.put(
-		path.join(CONFIG_API_ENDPOINT, configId),
-		config,
+		generateOcsUrl('apps/user_ldap/api/v1/config/{configId}', { configId }),
+		{ configData: config },
 	)
+
 	return response.data as LDAPConfig
 }
 
@@ -73,7 +64,8 @@ export async function updateConfig(
  * @param configId
  */
 export async function deleteConfig(configId: string): Promise<boolean> {
-	await axios.delete(path.join(CONFIG_API_ENDPOINT, configId))
+	await axios.delete(generateOcsUrl('apps/user_ldap/api/v1/config/{configId}', { configId }))
+	// TODO: check status
 	return true
 }
 
@@ -82,17 +74,21 @@ export async function deleteConfig(configId: string): Promise<boolean> {
  * @param configId
  */
 export async function testConfiguration(configId: string) {
+	const params = new FormData()
+	params.set('ldap_serverconfig_chooser', configId)
+
 	const response = await axios.post(
 		path.join(AJAX_ENDPOINT, 'testConfiguration.php'),
-		undefined,
-		{
-			params: {
-				ldap_serverconfig_chooser: configId,
-			},
-		},
+		params,
 	)
 
-	return response.data // TODO: check response content
+	if (response.data.status === 'success') {
+		showSuccess(response.data.message)
+	} else {
+		showError(response.data.message)
+	}
+
+	return response.data
 }
 
 /**
@@ -100,14 +96,12 @@ export async function testConfiguration(configId: string) {
  * @param subject
  */
 export async function clearMapping(subject: 'user' | 'group') {
+	const params = new FormData()
+	params.set('ldap_clear_mapping', subject)
+
 	const response = await axios.post(
 		path.join(AJAX_ENDPOINT, 'clearMappings.php'),
-		undefined,
-		{
-			data: {
-				ldap_clear_mapping: subject,
-			},
-		},
+		params,
 	)
 
 	return response.data // TODO: check response content
@@ -117,15 +111,26 @@ export async function clearMapping(subject: 'user' | 'group') {
  * Calls the wizard endpoint.
  * @param action
  * @param configId
+ * @param extraParams
  */
-export async function callWizard(action: WizardAction, configId: string) {
+export async function callWizard(action: WizardAction, configId: string, extraParams: Record<string, string> = {}) {
 	const params = new FormData()
 	params.set('action', action)
 	params.set('ldap_serverconfig_chooser', configId)
+
+	Object.entries(extraParams).forEach(([key, value]) => {
+		params.set(key, value)
+	})
+
 	const response = await axios.post(
 		path.join(AJAX_ENDPOINT, 'wizard.php'),
 		params,
 	)
+
+	if (response.data.status === 'error') {
+		showError(response.data.message)
+		throw new Error('Error when calling wizard.php')
+	}
 
 	return response.data
 }

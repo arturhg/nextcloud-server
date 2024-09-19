@@ -51,20 +51,20 @@
 				{{ t('user_ldap', 'The PHP LDAP module is not installed, the backend will not work. Please ask your system administrator to install it.') }}
 			</div>
 
-			<ServerTab v-if="selectedTab === 'server'" :ldap-config-id="selectedConfigId" />
-			<UsersTab v-else-if="selectedTab === 'users'" :ldap-config-id="selectedConfigId" />
-			<LoginTab v-else-if="selectedTab === 'login'" :ldap-config-id="selectedConfigId" />
-			<GroupsTab v-else-if="selectedTab === 'groups'" :ldap-config-id="selectedConfigId" />
-			<ExpertTab v-else-if="selectedTab === 'expert'" :ldap-config-id="selectedConfigId" />
-			<AdvancedTab v-else-if="selectedTab === 'advanced'" :ldap-config-id="selectedConfigId" />
+			<ServerTab v-if="selectedTab === 'server'" />
+			<UsersTab v-else-if="selectedTab === 'users'" />
+			<LoginTab v-else-if="selectedTab === 'login'" />
+			<GroupsTab v-else-if="selectedTab === 'groups'" />
+			<ExpertTab v-else-if="selectedTab === 'expert'" />
+			<AdvancedTab v-else-if="selectedTab === 'advanced'" />
 
-			<WizardControls class="ldap-wizard__controls" :ldap-config-id="selectedConfigId" />
+			<WizardControls class="ldap-wizard__controls" />
 		</div>
 	</form>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
 import Plus from 'vue-material-design-icons/Plus.vue'
 
@@ -78,7 +78,8 @@ import GroupsTab from '../components/SettingsTabs/GroupsTab.vue'
 import ExpertTab from '../components/SettingsTabs/ExpertTab.vue'
 import AdvancedTab from '../components/SettingsTabs/AdvancedTab.vue'
 import WizardControls from '../components/WizardControls.vue'
-import { useLDAPConfigStore } from '../store/config'
+import { useLDAPConfigStore } from '../store/configs'
+import { updateConfig } from '../services/ldapConfigService'
 
 const leftTabs = {
 	server: t('user_ldap', 'Server'),
@@ -96,20 +97,24 @@ const ldapConfigStore = useLDAPConfigStore()
 
 const selectedTab = ref('server')
 // eslint-disable-next-line prefer-const
-const selectedConfigId = ref(Object.keys(ldapConfigStore.ldapConfigs)[0] ?? undefined)
+let selectedConfigId = ldapConfigStore.selectedConfigId
 // TODO: Setup from initial state
 const ldapModuleInstalled = true
-
+const mutationsCount = ref(0)
 const selectOptions = Object.entries(ldapConfigStore.ldapConfigs).map(([configId, config]) => ({
 	id: configId,
 	label: `${configId}: ${config.ldapHost}`,
 }))
 
-ldapConfigStore.$subscribe((mutation, state) => {
-	ldapConfigStore.update(selectedConfigId.value)
-	console.log('mutation', mutation, state)
-})
+ldapConfigStore.$subscribe(() => {
+	if (selectedConfigId === undefined) {
+		throw new Error('selectedConfigId should not be undefined')
+	}
 
+	mutationsCount.value++
+	updateConfig()
+	mutationsCount.value--
+})
 </script>
 <style lang="scss" scoped>
 .ldap-wizard {
@@ -141,7 +146,7 @@ ldapConfigStore.$subscribe((mutation, state) => {
 	&__tab-container {
 		border: 1px solid gray;
 		border-radius: var(--border-radius);
-		padding: 0 16px;
+		padding: 0 16px 16px 16px;
 	}
 
 	&__controls {

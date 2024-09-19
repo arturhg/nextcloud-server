@@ -219,23 +219,12 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, computed } from 'vue'
-
 import { t } from '@nextcloud/l10n'
 import { NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/config'
+import { useLDAPConfigStore } from '../../store/configs'
 
-const ldapConfigStore = useLDAPConfigStore()
-
-const { ldapConfigId } = defineProps({
-	ldapConfigId: {
-		type: String,
-		required: true,
-	},
-})
-
-const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
+const { selectedConfig: ldapConfig } = useLDAPConfigStore()
 
 const instanceName = 'TODO'
 </script>

@@ -79,35 +79,26 @@
 		</div>
 
 		<div class="ldap-wizard__users__line ldap-wizard__users__user-count-check">
-			<NcButton @click="getUserCount">
+			<NcButton @click="countUsers">
 				{{ t('user_name', 'Verify settings and count users') }}
 			</NcButton>
 
-			<span v-if="userCount !== undefined">{{ t('user_ldap', "User count: {userCount}", { userCount }) }}</span>
+			<span v-if="usersCount !== undefined">{{ t('user_ldap', "User count: {userCount}", { usersCount }) }}</span>
 		</div>
 	</fieldset>
 </template>
 
 <script lang="ts" setup>
-import { defineProps, computed, ref } from 'vue'
+import { ref } from 'vue'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/config'
+import { useLDAPConfigStore } from '../../store/configs'
 
-const ldapConfigStore = useLDAPConfigStore()
+const { selectedConfig: ldapConfig, callWizardAction } = useLDAPConfigStore()
 
-const { ldapConfigId } = defineProps({
-	ldapConfigId: {
-		type: String,
-		required: true,
-	},
-})
-
-const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
-
-const userCount = ref<number>(-1)
+const usersCount = ref<number|undefined>(undefined)
 
 const editUserFilter = ref(false)
 const allowUserFilterGroupsSelection = ref(true) // TODO
@@ -116,8 +107,9 @@ const instanceName = 'TODO'
 /**
  *
  */
-async function getUserCount() {
-	userCount.value++ // TODO: Implement
+async function countUsers() {
+	const { changes: { ldap_test_base: ldapTestBase } } = await callWizardAction('countUsers')
+	usersCount.value = ldapTestBase
 }
 </script>
 <style lang="scss" scoped>

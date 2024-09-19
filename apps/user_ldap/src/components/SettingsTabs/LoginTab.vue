@@ -56,23 +56,14 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, computed, ref } from 'vue'
+import { ref } from 'vue'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextField, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/config'
+import { useLDAPConfigStore } from '../../store/configs'
 
-const ldapConfigStore = useLDAPConfigStore()
-
-const { ldapConfigId } = defineProps({
-	ldapConfigId: {
-		type: String,
-		required: true,
-	},
-})
-
-const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
+const { selectedConfig: ldapConfig, callWizardAction } = useLDAPConfigStore()
 
 const instanceName = 'TODO'
 const testUsername = ref('TODO')
@@ -83,7 +74,7 @@ const editUserLoginFilter = ref(false)
  *
  */
 async function verifyLoginName() {
-	// TODO: Implement
+	const { changes: { ldap_test_base: ldapTestBase } } = await callWizardAction('testLoginName', { testUsername: testUsername.value })
 }
 </script>
 <style lang="scss" scoped>

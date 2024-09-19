@@ -66,7 +66,7 @@
 		</div>
 
 		<div class="ldap-wizard__groups__line ldap-wizard__groups__groups-count-check">
-			<NcButton @click="getGroupsCount">
+			<NcButton @click="countGroups">
 				{{ t('user_ldap', 'Verify settings and count the groups') }}
 			</NcButton>
 
@@ -76,35 +76,27 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, computed, ref } from 'vue'
+import { ref } from 'vue'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/config'
+import { useLDAPConfigStore } from '../../store/configs'
 
-const ldapConfigStore = useLDAPConfigStore()
-
-const { ldapConfigId } = defineProps({
-	ldapConfigId: {
-		type: String,
-		required: true,
-	},
-})
-
-const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
+const { selectedConfig: ldapConfig, callWizardAction } = useLDAPConfigStore()
 
 const instanceName = 'TODO'
 
-const groupsCount = ref<number>(-1)
+const groupsCount = ref<number|undefined>(undefined)
 const editGroupsFilter = ref(false)
 const allowUserFilterGroupsSelection = ref(false)
 
 /**
  *
  */
-async function getGroupsCount() {
-	groupsCount.value++ // TODO: Implement
+async function countGroups() {
+	const { changes: { ldap_test_base: ldapTestBase } } = await callWizardAction('countGroups')
+	groupsCount.value = ldapTestBase
 }
 </script>
 <style lang="scss" scoped>

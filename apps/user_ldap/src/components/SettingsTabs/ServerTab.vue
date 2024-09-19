@@ -6,13 +6,13 @@
 	<fieldset class="ldap-wizard__server">
 		<div class="ldap-wizard__server__line">
 			<NcButton :aria-label="t('user_ldap', 'Copy current configuration into new directory binding')"
-				@click="() => ldapConfigStore.copy(ldapConfigId)">
+				@click="() => copy(ldapConfigId)">
 				<template #icon>
 					<ContentCopy :size="20" />
 				</template>
 			</NcButton>
 			<NcButton :aria-label="t('user_ldap', 'Delete the current configuration')"
-				@click="() => ldapConfigStore.remove(ldapConfigId)">
+				@click="() => remove(ldapConfigId)">
 				<template #icon>
 					<Delete :size="20" />
 				</template>
@@ -36,7 +36,7 @@
 		</div>
 
 		<div class="ldap-wizard__server__line">
-			<NcTextField :value.sync="ldapConfig.ldapAgentName"
+			<NcTextField :value.sync="localLdapAgentName"
 				:helper-text="t('user_ldap', 'The DN of the client user with which the bind shall be done, e.g. uid=agent,dc=example,dc=com. For anonymous access, leave DN and Password empty.')"
 				:placeholder="t('user_ldap', 'User DN')"
 				autocomplete="off" />
@@ -45,11 +45,11 @@
 		<div class="ldap-wizard__server__line">
 			<NcTextField type="password"
 				:helper-text="t('user_ldap', 'For anonymous access, leave DN and Password empty.')"
-				:value.sync="ldapConfig.ldapAgentPassword"
+				:value.sync="localLdapAgentPassword"
 				:placeholder="t('user_ldap', 'Password')"
 				autocomplete="off" />
 
-			<NcButton @click="ldapConfigStore.create">
+			<NcButton :disabled="!needsToSaveCredentials" @click="updateCredentials">
 				{{ t('user_ldap', 'Save Credentials') }}
 			</NcButton>
 		</div>
@@ -79,7 +79,7 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, computed, ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
@@ -87,50 +87,49 @@ import Delete from 'vue-material-design-icons/Delete.vue'
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/config'
-import { callWizard } from '../../services/ldapConfigService'
+import { useLDAPConfigStore } from '../../store/configs'
+import { showInfo } from '@nextcloud/dialogs'
+import { useWizardStore } from '../../store/wizard'
 
-const { ldapConfigId } = defineProps({
-	ldapConfigId: {
-		type: String,
-		required: true,
-	},
+const { selectedConfigId: ldapConfigId, selectedConfig: ldapConfig, copy, remove } = useLDAPConfigStore()
+const { currentWizardActions, callWizardAction } = useWizardStore()
+
+const localLdapAgentName = ref(ldapConfig.ldapAgentName)
+const localLdapAgentPassword = ref(ldapConfig.ldapAgentPassword)
+const needsToSaveCredentials = computed(() => {
+	return ldapConfig.ldapAgentName !== localLdapAgentName.value || ldapConfig.ldapAgentPassword !== localLdapAgentPassword.value
 })
 
-const ldapConfigStore = useLDAPConfigStore()
-
-const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
-const usersCount = ref<number|undefined>(undefined)
-const currentWizardActions = ref<string[]>([])
+/**
+ *
+ */
+function updateCredentials() {
+	ldapConfig.ldapAgentName = localLdapAgentName.value
+	ldapConfig.ldapAgentPassword = localLdapAgentPassword.value
+}
 
 /**
  *
  */
 async function guessPortAndTLS() {
-	currentWizardActions.value.push('guessPortAndTLS')
-	const { changes: { ldap_port: ldapPort } } = await callWizard('guessPortAndTLS', ldapConfigId)
-	ldapConfig.value.ldapPort = ldapPort
-	currentWizardActions.value.splice(currentWizardActions.value.indexOf('guessPortAndTLS'), 1)
+	const { changes: { ldap_port: ldapPort } } = await callWizardAction('guessPortAndTLS')
+	ldapConfig.ldapPort = String(ldapPort)
 }
 
 /**
  *
  */
 async function guessBaseDN() {
-	currentWizardActions.value.push('guessBaseDN')
-	const { changes: { ldap_base: ldapBase } } = await callWizard('guessBaseDN', ldapConfigId)
-	ldapConfig.value.ldapBase = ldapBase
-	currentWizardActions.value.splice(currentWizardActions.value.indexOf('guessPortAndTLS'), 1)
+	const { changes: { ldap_base: ldapBase } } = await callWizardAction('guessBaseDN')
+	ldapConfig.ldapBase = ldapBase
 }
 
 /**
  *
  */
 async function countInBaseDN() {
-	currentWizardActions.value.push('countInBaseDN')
-	const { changes: { ldap_test_base: ldapTestBase } } = await callWizard('countInBaseDN', ldapConfigId)
-	usersCount.value = ldapTestBase
-	currentWizardActions.value.splice(currentWizardActions.value.indexOf('guessPortAndTLS'), 1)
+	const { changes: { ldap_test_base: ldapTestBase } } = await callWizardAction('countInBaseDN')
+	showInfo(t('user_ldap', 'Found {count} users in the given Base DN.', { count: ldapTestBase }))
 }
 
 </script>

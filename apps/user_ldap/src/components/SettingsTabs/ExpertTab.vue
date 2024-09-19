@@ -40,23 +40,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineProps } from 'vue'
-
 import { t } from '@nextcloud/l10n'
 import { NcTextField, NcButton } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/config'
+import { useLDAPConfigStore } from '../../store/configs'
 
-const ldapConfigStore = useLDAPConfigStore()
-
-const { ldapConfigId } = defineProps({
-	ldapConfigId: {
-		type: String,
-		required: true,
-	},
-})
-
-const ldapConfig = computed(() => ldapConfigStore.ldapConfigs[ldapConfigId])
+const { selectedConfig: ldapConfig } = useLDAPConfigStore()
 </script>
 <style lang="scss" scoped>
 .ldap-wizard__expert {

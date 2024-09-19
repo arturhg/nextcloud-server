@@ -12,6 +12,7 @@ use OCA\User_LDAP\Configuration;
 use OCA\User_LDAP\ConnectionFactory;
 use OCA\User_LDAP\Helper;
 use OCA\User_LDAP\Settings\Admin;
+use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCS\OCSBadRequestException;
@@ -56,6 +57,7 @@ class ConfigAPIController extends OCSController {
 	 * 200: Config created successfully
 	 */
 	#[AuthorizedAdminSetting(settings: Admin::class)]
+	#[ApiRoute(verb: 'POST', url: '/api/v1/config')]
 	public function create() {
 		try {
 			$configPrefix = $this->ldapHelper->getNextServerConfigurationPrefix();
@@ -80,6 +82,7 @@ class ConfigAPIController extends OCSController {
 	 * 200: Config deleted successfully
 	 */
 	#[AuthorizedAdminSetting(settings: Admin::class)]
+	#[ApiRoute(verb: 'DELETE', url: '/api/v1/config/{configID}')]
 	public function delete($configID) {
 		try {
 			$this->ensureConfigIDExists($configID);
@@ -109,6 +112,7 @@ class ConfigAPIController extends OCSController {
 	 * 200: Config returned
 	 */
 	#[AuthorizedAdminSetting(settings: Admin::class)]
+	#[ApiRoute(verb: 'PUT', url: '/api/v1/config/{configID}')]
 	public function modify($configID, $configData) {
 		try {
 			$this->ensureConfigIDExists($configID);
@@ -213,6 +217,7 @@ class ConfigAPIController extends OCSController {
 	 * 200: Config returned
 	 */
 	#[AuthorizedAdminSetting(settings: Admin::class)]
+	#[ApiRoute(verb: 'GET', url: '/api/v1/config/{configID}')]
 	public function show($configID, $showPassword = false) {
 		try {
 			$this->ensureConfigIDExists($configID);

@@ -65,7 +65,6 @@ class Admin implements IDelegatedSettings {
 		foreach ($prefixes as $prefix) {
 			$ldapConfig = new Configuration($prefix);
 			$rawLdapConfig = $ldapConfig->getConfiguration();
-			$rawLdapConfig['ldapAgentPassword'] = '***';
 			foreach ($rawLdapConfig as $key => $value) {
 				if (is_array($value)) {
 					$rawLdapConfig[$key] = implode(';', $value);
