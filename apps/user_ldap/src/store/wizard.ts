@@ -6,12 +6,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 import { callWizard, type WizardAction } from '../services/ldapConfigService'
-import { useLDAPConfigStore } from './configs'
+import { useLDAPConfigsStore } from './configs'
 
 export const useWizardStore = defineStore('ldap-wizard', () => {
 	const currentWizardActions = ref<string[]>([])
 
-	const { selectedConfigId } = useLDAPConfigStore()
+	const { selectedConfigId } = useLDAPConfigsStore()
 
 	/**
 	 *

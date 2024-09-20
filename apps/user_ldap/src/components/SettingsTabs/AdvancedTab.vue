@@ -219,12 +219,15 @@
 </template>
 
 <script lang="ts" setup>
+import { storeToRefs } from 'pinia'
+
 import { t } from '@nextcloud/l10n'
 import { NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/configs'
+import { useLDAPConfigsStore } from '../../store/configs'
 
-const { selectedConfig: ldapConfig } = useLDAPConfigStore()
+const ldapConfigsStore = useLDAPConfigsStore()
+const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
 const instanceName = 'TODO'
 </script>

@@ -90,13 +90,17 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/configs'
+import { useLDAPConfigsStore } from '../../store/configs'
+import { useWizardStore } from '../../store/wizard'
 
-const { selectedConfig: ldapConfig, callWizardAction } = useLDAPConfigStore()
+const wizardStore = useWizardStore()
+const ldapConfigsStore = useLDAPConfigsStore()
+const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
 const usersCount = ref<number|undefined>(undefined)
 
@@ -108,7 +112,7 @@ const instanceName = 'TODO'
  *
  */
 async function countUsers() {
-	const { changes: { ldap_test_base: ldapTestBase } } = await callWizardAction('countUsers')
+	const { changes: { ldap_test_base: ldapTestBase } } = await wizardStore.callWizardAction('countUsers')
 	usersCount.value = ldapTestBase
 }
 </script>

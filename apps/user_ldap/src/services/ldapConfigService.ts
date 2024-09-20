@@ -5,12 +5,12 @@
 
 import path from 'path'
 
-import axios from '@nextcloud/axios'
+import axios, { AxiosError, type AxiosResponse } from '@nextcloud/axios'
 import { getAppRootUrl, generateOcsUrl } from '@nextcloud/router'
 
 import type { LDAPConfig } from '../models'
-import { useLDAPConfigStore } from '../store/configs'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+import type { OCSResponse } from '@nextcloud/typings/ocs'
 
 const AJAX_ENDPOINT = path.join(getAppRootUrl('user_ldap'), '/ajax')
 
@@ -37,8 +37,8 @@ export type WizardAction =
  *
  * @param config
  */
-export async function createConfig(config: LDAPConfig) {
-	const response = await axios.post(generateOcsUrl('apps/user_ldap/api/v1/config'), config)
+export async function createConfig() {
+	const response = await axios.post(generateOcsUrl('apps/user_ldap/api/v1/config'))
 	return response.data.ocs.data.configID as string
 }
 
@@ -47,10 +47,17 @@ export async function createConfig(config: LDAPConfig) {
  * @param configId
  * @param config
  */
-export async function updateConfig(): Promise<LDAPConfig> {
-	const configId = useLDAPConfigStore().selectedConfigId
-	const config = useLDAPConfigStore().selectedConfig
+export async function getConfig(configId: string): Promise<LDAPConfig> {
+	const response: AxiosResponse<OCSResponse<LDAPConfig>> = await axios.get(generateOcsUrl('apps/user_ldap/api/v1/config/{configId}', { configId }))
+	return response.data.ocs.data
+}
 
+/**
+ *
+ * @param configId
+ * @param config
+ */
+export async function updateConfig(configId: string, config: LDAPConfig): Promise<LDAPConfig> {
 	const response = await axios.put(
 		generateOcsUrl('apps/user_ldap/api/v1/config/{configId}', { configId }),
 		{ configData: config },
@@ -64,8 +71,13 @@ export async function updateConfig(): Promise<LDAPConfig> {
  * @param configId
  */
 export async function deleteConfig(configId: string): Promise<boolean> {
-	await axios.delete(generateOcsUrl('apps/user_ldap/api/v1/config/{configId}', { configId }))
-	// TODO: check status
+	try {
+		await axios.delete(generateOcsUrl('apps/user_ldap/api/v1/config/{configId}', { configId }))
+	} catch (error) {
+		const errorResponse = (error as AxiosError<OCSResponse>).response
+		showError(errorResponse?.data.ocs.meta.message || 'Fail to delete config')
+	}
+
 	return true
 }
 

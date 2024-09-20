@@ -77,13 +77,17 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/configs'
+import { useLDAPConfigsStore } from '../../store/configs'
+import { useWizardStore } from '../../store/wizard'
 
-const { selectedConfig: ldapConfig, callWizardAction } = useLDAPConfigStore()
+const ldapConfigsStore = useLDAPConfigsStore()
+const wizardStore = useWizardStore()
+const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
 const instanceName = 'TODO'
 
@@ -95,7 +99,7 @@ const allowUserFilterGroupsSelection = ref(false)
  *
  */
 async function countGroups() {
-	const { changes: { ldap_test_base: ldapTestBase } } = await callWizardAction('countGroups')
+	const { changes: { ldap_test_base: ldapTestBase } } = await wizardStore.callWizardAction('countGroups')
 	groupsCount.value = ldapTestBase
 }
 </script>

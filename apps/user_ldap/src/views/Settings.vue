@@ -8,18 +8,26 @@
 
 		<div class="ldap-wizard__config-selection">
 			<NcSelect v-model="selectedConfigId"
-				:options="selectOptions"
-				:input-label="t('user_ldap', 'Select LDAP Config')" />
-			<NcButton :label="t('user_ldap','Create New Config')" @click="ldapConfigStore.create">
+				:options="Object.keys(ldapConfigs)"
+				:input-label="t('user_ldap', 'Select LDAP Config')"
+				@input="selectedConfigId = $event">
+				<template #option="{label: configId}">
+					{{ `${configId}: ${ldapConfigs[configId].ldapHost}` }}
+				</template>
+				<template #selected-option="{label: configId}">
+					{{ `${configId}: ${ldapConfigs[configId].ldapHost}` }}
+				</template>
+			</NcSelect>
+			<NcButton :label="t('user_ldap','Create New Config')" @click="ldapConfigsStore.create">
 				<template #icon>
 					<Plus :size="20" />
 				</template>
 			</NcButton>
-			<!-- TODO: Find a use for the loading icon -->
-			<NcLoadingIcon v-if="false" />
 		</div>
 
-		<div v-if="selectedConfigId !== undefined" class="ldap-wizard__tab-container">
+		<NcNoteCard v-if="!ldapModuleInstalled" type="warning" :text="t('user_ldap', 'The PHP LDAP module is not installed, the backend will not work. Please ask your system administrator to install it.')" />
+
+		<div v-if="ldapModuleInstalled && selectedConfig !== undefined" class="ldap-wizard__tab-container">
 			<div class="ldap-wizard__tab-selection-container">
 				<div class="ldap-wizard__tab-selection">
 					<NcCheckboxRadioSwitch v-for="(tabLabel, tabId) in leftTabs"
@@ -45,12 +53,6 @@
 				</div>
 			</div>
 
-			<!-- TODO: change ldapwarning -->
-			<div v-if="!ldapModuleInstalled" class="ldapwarning">
-				{{ t('user_ldap', '<b>Warning:</b>') }}
-				{{ t('user_ldap', 'The PHP LDAP module is not installed, the backend will not work. Please ask your system administrator to install it.') }}
-			</div>
-
 			<ServerTab v-if="selectedTab === 'server'" />
 			<UsersTab v-else-if="selectedTab === 'users'" />
 			<LoginTab v-else-if="selectedTab === 'login'" />
@@ -69,7 +71,8 @@ import { ref } from 'vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 
 import { t } from '@nextcloud/l10n'
-import { NcCheckboxRadioSwitch, NcLoadingIcon, NcSelect, NcButton } from '@nextcloud/vue'
+import { loadState } from '@nextcloud/initial-state'
+import { NcCheckboxRadioSwitch, NcSelect, NcButton, NcNoteCard } from '@nextcloud/vue'
 
 import ServerTab from '../components/SettingsTabs/ServerTab.vue'
 import UsersTab from '../components/SettingsTabs/UsersTab.vue'
@@ -78,8 +81,11 @@ import GroupsTab from '../components/SettingsTabs/GroupsTab.vue'
 import ExpertTab from '../components/SettingsTabs/ExpertTab.vue'
 import AdvancedTab from '../components/SettingsTabs/AdvancedTab.vue'
 import WizardControls from '../components/WizardControls.vue'
-import { useLDAPConfigStore } from '../store/configs'
+import { useLDAPConfigsStore } from '../store/configs'
 import { updateConfig } from '../services/ldapConfigService'
+import { storeToRefs } from 'pinia'
+
+const ldapModuleInstalled = loadState('user_ldap', 'ldapModuleInstalled')
 
 const leftTabs = {
 	server: t('user_ldap', 'Server'),
@@ -93,27 +99,17 @@ const rightTabs = {
 	expert: t('user_ldap', 'Expert'),
 }
 
-const ldapConfigStore = useLDAPConfigStore()
+const ldapConfigsStore = useLDAPConfigsStore()
+const { ldapConfigs, selectedConfigId, selectedConfig } = storeToRefs(ldapConfigsStore)
 
 const selectedTab = ref('server')
-// eslint-disable-next-line prefer-const
-let selectedConfigId = ldapConfigStore.selectedConfigId
-// TODO: Setup from initial state
-const ldapModuleInstalled = true
-const mutationsCount = ref(0)
-const selectOptions = Object.entries(ldapConfigStore.ldapConfigs).map(([configId, config]) => ({
-	id: configId,
-	label: `${configId}: ${config.ldapHost}`,
-}))
 
-ldapConfigStore.$subscribe(() => {
+ldapConfigsStore.$subscribe(async () => {
 	if (selectedConfigId === undefined) {
 		throw new Error('selectedConfigId should not be undefined')
 	}
 
-	mutationsCount.value++
-	updateConfig()
-	mutationsCount.value--
+	await updateConfig(selectedConfigId.value, selectedConfig.value)
 })
 </script>
 <style lang="scss" scoped>

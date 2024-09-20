@@ -57,13 +57,18 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextField, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/configs'
+import { useLDAPConfigsStore } from '../../store/configs'
+import { useWizardStore } from '../../store/wizard'
 
-const { selectedConfig: ldapConfig, callWizardAction } = useLDAPConfigStore()
+const ldapConfigsStore = useLDAPConfigsStore()
+const wizardStore = useWizardStore()
+
+const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
 const instanceName = 'TODO'
 const testUsername = ref('TODO')
@@ -74,7 +79,7 @@ const editUserLoginFilter = ref(false)
  *
  */
 async function verifyLoginName() {
-	const { changes: { ldap_test_base: ldapTestBase } } = await callWizardAction('testLoginName', { testUsername: testUsername.value })
+	const { changes: { ldap_test_base: ldapTestBase } } = await wizardStore.callWizardAction('testLoginName', { testUsername: testUsername.value })
 }
 </script>
 <style lang="scss" scoped>

@@ -75,7 +75,7 @@ class Admin implements IDelegatedSettings {
 		}
 
 		$this->InitialState->provideInitialState('ldapConfigs', $ldapConfigs);
-		$this->InitialState->provideInitialState('ldapDefaultConfig', $defaults);
+		$this->InitialState->provideInitialState('ldapModuleInstalled', function_exists('ldap_connect'));
 
 		return new TemplateResponse('user_ldap', 'settings', $parameters);
 	}

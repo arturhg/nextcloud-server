@@ -6,13 +6,13 @@
 	<fieldset class="ldap-wizard__server">
 		<div class="ldap-wizard__server__line">
 			<NcButton :aria-label="t('user_ldap', 'Copy current configuration into new directory binding')"
-				@click="() => copy(ldapConfigId)">
+				@click="() => ldapConfigsStore.copyConfig(ldapConfigId)">
 				<template #icon>
 					<ContentCopy :size="20" />
 				</template>
 			</NcButton>
 			<NcButton :aria-label="t('user_ldap', 'Delete the current configuration')"
-				@click="() => remove(ldapConfigId)">
+				@click="() => ldapConfigsStore.removeConfig(ldapConfigId)">
 				<template #icon>
 					<Delete :size="20" />
 				</template>
@@ -80,6 +80,7 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 
 import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
@@ -87,25 +88,26 @@ import Delete from 'vue-material-design-icons/Delete.vue'
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 
-import { useLDAPConfigStore } from '../../store/configs'
+import { useLDAPConfigsStore } from '../../store/configs'
 import { showInfo } from '@nextcloud/dialogs'
 import { useWizardStore } from '../../store/wizard'
 
-const { selectedConfigId: ldapConfigId, selectedConfig: ldapConfig, copy, remove } = useLDAPConfigStore()
+const ldapConfigsStore = useLDAPConfigsStore()
+const { selectedConfigId: ldapConfigId, selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 const { currentWizardActions, callWizardAction } = useWizardStore()
 
-const localLdapAgentName = ref(ldapConfig.ldapAgentName)
-const localLdapAgentPassword = ref(ldapConfig.ldapAgentPassword)
+const localLdapAgentName = ref(ldapConfig.value.ldapAgentName)
+const localLdapAgentPassword = ref(ldapConfig.value.ldapAgentPassword)
 const needsToSaveCredentials = computed(() => {
-	return ldapConfig.ldapAgentName !== localLdapAgentName.value || ldapConfig.ldapAgentPassword !== localLdapAgentPassword.value
+	return ldapConfig.value.ldapAgentName !== localLdapAgentName.value || ldapConfig.value.ldapAgentPassword !== localLdapAgentPassword.value
 })
 
 /**
  *
  */
 function updateCredentials() {
-	ldapConfig.ldapAgentName = localLdapAgentName.value
-	ldapConfig.ldapAgentPassword = localLdapAgentPassword.value
+	ldapConfig.value.ldapAgentName = localLdapAgentName.value
+	ldapConfig.value.ldapAgentPassword = localLdapAgentPassword.value
 }
 
 /**
@@ -113,7 +115,7 @@ function updateCredentials() {
  */
 async function guessPortAndTLS() {
 	const { changes: { ldap_port: ldapPort } } = await callWizardAction('guessPortAndTLS')
-	ldapConfig.ldapPort = String(ldapPort)
+	ldapConfig.value.ldapPort = String(ldapPort)
 }
 
 /**
@@ -121,7 +123,7 @@ async function guessPortAndTLS() {
  */
 async function guessBaseDN() {
 	const { changes: { ldap_base: ldapBase } } = await callWizardAction('guessBaseDN')
-	ldapConfig.ldapBase = ldapBase
+	ldapConfig.value.ldapBase = ldapBase
 }
 
 /**

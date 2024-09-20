@@ -24,16 +24,18 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 
 import Information from 'vue-material-design-icons/ContentCopy.vue'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton } from '@nextcloud/vue'
+
 import { testConfiguration } from '../services/ldapConfigService'
+import { useLDAPConfigsStore } from '../store/configs'
 
-import { useLDAPConfigStore } from '../store/configs'
-
-const { selectedConfigId } = useLDAPConfigStore()
+const ldapConfigsStore = useLDAPConfigsStore()
+const { selectedConfigId } = storeToRefs(ldapConfigsStore)
 
 const loading = ref(false)
 
@@ -43,7 +45,7 @@ const loading = ref(false)
 function testSelectedConfig() {
 	try {
 		loading.value = true
-		testConfiguration(selectedConfigId)
+		testConfiguration(selectedConfigId.value)
 	} finally {
 		loading.value = false
 	}
