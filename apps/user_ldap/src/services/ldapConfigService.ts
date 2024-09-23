@@ -146,7 +146,7 @@ export async function callWizard(action: WizardAction, configId: string, extraPa
 
 	if (response.data.status === 'error') {
 		showError(response.data.message)
-		throw new Error(t('user_ldap', 'Error when calling wizard.php'))
+		throw new Error(response.data.message)
 	}
 
 	return response.data

@@ -9,8 +9,7 @@
 		<div class="ldap-wizard__config-selection">
 			<NcSelect v-model="selectedConfigId"
 				:options="Object.keys(ldapConfigs)"
-				:input-label="t('user_ldap', 'Select LDAP Config')"
-				@input="selectedConfigId = $event">
+				:input-label="t('user_ldap', 'Select LDAP Config')">
 				<template #option="{label: configId}">
 					{{ `${configId}: ${ldapConfigs[configId].ldapHost}` }}
 				</template>

@@ -21,11 +21,13 @@
 				{{ t('user_ldap', 'LDAP/AD Email Address') }}
 			</NcCheckboxRadioSwitch>
 
-			<NcSelect v-model="ldapConfig.ldapLoginFilterAttributes"
+			<NcSelect :value="selectedLoginFilterAttributes"
+				:close-on-select="false"
 				:disabled="ldapConfig.ldapLoginFilterMode === '1'"
-				:options="['TODO']"
+				:options="filteredLoginFilterOptions"
 				:input-label="t('user_ldap', 'Other Attributes:')"
-				:multiple="true" />
+				:multiple="true"
+				@input="updateLoginFilterAttributes" />
 		</div>
 
 		<div class="ldap-wizard__login__line ldap-wizard__login__user-login-filter">
@@ -60,16 +62,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextField, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 import { getCapabilities } from '@nextcloud/capabilities'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 
 import { useLDAPConfigsStore } from '../../store/configs'
 import { useWizardStore } from '../../store/wizard'
-import { showError, showSuccess } from '@nextcloud/dialogs'
 import { showEnableAutomaticFilterInfo } from '../../services/ldapConfigService'
 
 const ldapConfigsStore = useLDAPConfigsStore()
@@ -81,16 +83,48 @@ const instanceName = (getCapabilities() as { theming: { name:string } }).theming
 const testUsername = ref('')
 const enableVerifyButton = ref(false)
 
+const loginFilterOptions = ref<string[]>([])
+const selectedLoginFilterAttributes = computed(() => ldapConfig.value.ldapLoginFilterAttributes.split(';'))
+const filteredLoginFilterOptions = computed(() => loginFilterOptions.value.filter((option) => !selectedLoginFilterAttributes.value.includes(option)))
+wizardStore.callWizardAction('determineAttributes')
+	.then(({ options }) => { loginFilterOptions.value = options.ldap_loginfilter_attributes })
+
+/**
+ *
+ * @param value
+ */
+function updateLoginFilterAttributes(value) {
+	ldapConfig.value.ldapLoginFilterAttributes = value.join(';')
+}
+
 /**
  *
  */
 async function verifyLoginName() {
-	const { changes: { ldap_test_loginname: testLoginName, ldap_test_effective_filter: testEffectiveFilter } } = await wizardStore.callWizardAction('testLoginName', { ldap_test_loginname: testUsername.value })
+	try {
+		const { changes: { ldap_test_loginname: testLoginName, ldap_test_effective_filter: testEffectiveFilter } } = await wizardStore.callWizardAction('testLoginName', { ldap_test_loginname: testUsername.value })
 
-	if (testLoginName === 1) {
-		showSuccess(t('user_ldap', 'User found and settings verified.'))
-	} else {
-		showError(t('user_ldap', 'User not found. Please check your login attributes and username. Effective filter (to copy-and-paste for command-line validation): {filter}', { filter: testEffectiveFilter }))
+		if (testLoginName < 1) {
+			showSuccess(t('user_ldap', 'User not found. Please check your login attributes and username. Effective filter (to copy-and-paste for command-line validation): {filter}', { filter: testEffectiveFilter }))
+		} else if (testLoginName === 1) {
+			showSuccess(t('user_ldap', 'User found and settings verified.'))
+		} else if (testLoginName > 1) {
+			showSuccess(t('user_ldap', 'Consider narrowing your search, as it encompassed many users, only the first one of whom will be able to log in.'))
+		}
+	} catch (error) {
+		const message = error ?? t('user_ldap', 'An unspecified error occurred. Please check log and settings.')
+
+		switch (message) {
+		case 'Bad search filter':
+			showError(t('user_ldap', 'The search filter is invalid, probably due to syntax issues like uneven number of opened and closed brackets. Please revise.'))
+			break
+		case 'connection error':
+			showError(t('user_ldap', 'A connection error to LDAP/AD occurred. Please check host, port and credentials.'))
+			break
+		case 'missing placeholder':
+			showError(t('user_ldap', 'The "%uid" placeholder is missing. It will be replaced with the login name when querying LDAP/AD.'))
+			break
+		}
 	}
 }
 
