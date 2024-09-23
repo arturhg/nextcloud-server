@@ -7,7 +7,7 @@ import Vue, { computed, ref } from 'vue'
 
 import { loadState } from '@nextcloud/initial-state'
 
-import { createConfig, deleteConfig, getConfig, updateConfig } from '../services/ldapConfigService'
+import { createConfig, deleteConfig, getConfig } from '../services/ldapConfigService'
 import type { LDAPConfig } from '../models'
 
 export const useLDAPConfigsStore = defineStore('ldap-configs', () => {

@@ -8,6 +8,7 @@
 
 		<div class="ldap-wizard__users__line ldap-wizard__users__user-filter-object-class">
 			<NcSelect v-model="ldapConfig.ldapUserFilterObjectclass"
+				:disabled="ldapConfig.ldapUserFilterMode === '1'"
 				class="ldap-wizard__users__user-filter-object-class__select"
 				:disable="editUserFilter"
 				:options="['TODO']"
@@ -29,6 +30,7 @@
 
 			<NcSelect v-model="ldapConfig.ldapUserFilterGroups"
 				class="ldap-wizard__users__user-filter-groups__select"
+				:disabled="ldapConfig.ldapUserFilterMode === '1'"
 				:options="['TODO']"
 				:disable="allowUserFilterGroupsSelection"
 				:input-label="t('user_name', 'Only these object classes:')"
@@ -39,6 +41,7 @@
 		<div class="ldap-wizard__users__line">
 			<p class="ldapManyGroupsSupport hidden">
 				<select class="ldapGroupList ldapGroupListAvailable"
+					:disabled="ldapConfig.ldapUserFilterMode === '1'"
 					:multiple="true"
 					aria-describedby="ldapGroupListAvailable_instructions"
 					:title="t('user_name', 'Available groups')" />
@@ -53,6 +56,7 @@
 			</span>
 
 			<select class="ldapGroupList ldapGroupListSelected"
+				:disabled="ldapConfig.ldapUserFilterMode === '1'"
 				:multiple="true"
 				aria-describedby="ldapGroupListSelected_instructions"
 				:title="t('user_name', 'Selected groups')" />
@@ -63,13 +67,14 @@
 		</div>
 
 		<div class="ldap-wizard__users__line ldap-wizard__users__user-filter">
-			<NcCheckboxRadioSwitch :checked.sync="editUserFilter">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapUserFilterMode === '1'"
+				@update:checked="toggleFilterMode">
 				{{ t('user_name', 'Edit LDAP Query') }}
 			</NcCheckboxRadioSwitch>
 
-			<div v-if="!editUserFilter">
+			<div v-if="ldapConfig.ldapUserFilterMode === '0'">
 				<label>{{ t('user_name', 'LDAP Filter:') }}</label>
-				<span>{{ ldapConfig.ldapUserFilter }}</span>
+				<code>{{ ldapConfig.ldapUserFilter }}</code>
 			</div>
 			<div v-else>
 				<NcTextArea :value.sync="ldapConfig.ldapUserFilter"
@@ -94,9 +99,11 @@ import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
+import { getCapabilities } from '@nextcloud/capabilities'
 
 import { useLDAPConfigsStore } from '../../store/configs'
 import { useWizardStore } from '../../store/wizard'
+import { showEnableAutomaticFilterInfo } from '../../services/ldapConfigService'
 
 const wizardStore = useWizardStore()
 const ldapConfigsStore = useLDAPConfigsStore()
@@ -104,9 +111,8 @@ const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
 const usersCount = ref<number|undefined>(undefined)
 
-const editUserFilter = ref(false)
 const allowUserFilterGroupsSelection = ref(true) // TODO
-const instanceName = 'TODO'
+const instanceName = (getCapabilities() as { theming: { name:string } }).theming.name
 
 /**
  *
@@ -114,6 +120,18 @@ const instanceName = 'TODO'
 async function countUsers() {
 	const { changes: { ldap_test_base: ldapTestBase } } = await wizardStore.callWizardAction('countUsers')
 	usersCount.value = ldapTestBase
+}
+
+/**
+ *
+ * @param value
+ */
+async function toggleFilterMode(value: boolean) {
+	if (value) {
+		ldapConfig.value.ldapUserFilterMode = '1'
+	} else {
+		ldapConfig.value.ldapUserFilterMode = await showEnableAutomaticFilterInfo()
+	}
 }
 </script>
 <style lang="scss" scoped>
@@ -150,6 +168,12 @@ async function countUsers() {
 	&__user-filter {
 		display: flex;
 		flex-direction: column;
+
+		code {
+			background-color: var(--color-background-dark);
+			padding: 4px;
+			border-radius: 4px;
+		}
 	}
 
 	&__user-count-check {

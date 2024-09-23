@@ -18,7 +18,7 @@
 					{{ `${configId}: ${ldapConfigs[configId].ldapHost}` }}
 				</template>
 			</NcSelect>
-			<NcButton :label="t('user_ldap','Create New Config')" @click="ldapConfigsStore.create">
+			<NcButton :label="t('user_ldap','Create New Config')" class="ldap-wizard__config-selection__create-button" @click="ldapConfigsStore.create">
 				<template #icon>
 					<Plus :size="20" />
 				</template>
@@ -62,6 +62,20 @@
 
 			<WizardControls class="ldap-wizard__controls" />
 		</div>
+
+		<div class="ldap-wizard__clear-mapping">
+			<strong>{{ t('user_ldap', 'Username-LDAP User Mapping') }}</strong>
+			{{ t('user_ldap', 'Usernames are used to store and assign metadata. In order to precisely identify and recognize users, each LDAP user will have an internal username. This requires a mapping from username to LDAP user. The created username is mapped to the UUID of the LDAP user. Additionally the DN is cached as well to reduce LDAP interaction, but it is not used for identification. If the DN changes, the changes will be found. The internal username is used all over. Clearing the mappings will have leftovers everywhere. Clearing the mappings is not configuration sensitive, it affects all LDAP configurations! Never clear the mappings in a production environment, only in a testing or experimental stage.') }}
+
+			<div class="ldap-wizard__clear-mapping__buttons">
+				<NcButton type="error" :disabled="clearMappingLoading" @click="requestClearMapping('user')">
+					{{ t('user_ldap', 'Clear Username-LDAP User Mapping') }}
+				</NcButton>
+				<NcButton type="error" :disabled="clearMappingLoading" @click="requestClearMapping('group')">
+					{{ t('user_ldap', 'Clear Groupname-LDAP Group Mapping') }}
+				</NcButton>
+			</div>
+		</div>
 	</form>
 </template>
 
@@ -82,7 +96,7 @@ import ExpertTab from '../components/SettingsTabs/ExpertTab.vue'
 import AdvancedTab from '../components/SettingsTabs/AdvancedTab.vue'
 import WizardControls from '../components/WizardControls.vue'
 import { useLDAPConfigsStore } from '../store/configs'
-import { updateConfig } from '../services/ldapConfigService'
+import { clearMapping, updateConfig } from '../services/ldapConfigService'
 import { storeToRefs } from 'pinia'
 
 const ldapModuleInstalled = loadState('user_ldap', 'ldapModuleInstalled')
@@ -103,6 +117,7 @@ const ldapConfigsStore = useLDAPConfigsStore()
 const { ldapConfigs, selectedConfigId, selectedConfig } = storeToRefs(ldapConfigsStore)
 
 const selectedTab = ref('server')
+const clearMappingLoading = ref(false)
 
 ldapConfigsStore.$subscribe(async () => {
 	if (selectedConfigId === undefined) {
@@ -111,6 +126,19 @@ ldapConfigsStore.$subscribe(async () => {
 
 	await updateConfig(selectedConfigId.value, selectedConfig.value)
 })
+
+/**
+ *
+ * @param subject
+ */
+async function requestClearMapping(subject: 'user'|'group') {
+	try {
+		clearMappingLoading.value = true
+		await clearMapping(subject)
+	} finally {
+		clearMappingLoading.value = false
+	}
+}
 </script>
 <style lang="scss" scoped>
 .ldap-wizard {
@@ -119,9 +147,13 @@ ldapConfigsStore.$subscribe(async () => {
 
 	&__config-selection {
 		display: flex;
-		align-items: bottom;
+		align-items: end;
 		margin-bottom: 8px;
 		gap: 16px;
+
+		&__create-button {
+			margin-bottom: 4px;
+		}
 	}
 
 	&__tab-selection-container {
@@ -140,13 +172,24 @@ ldapConfigsStore.$subscribe(async () => {
 	}
 
 	&__tab-container {
-		border: 1px solid gray;
+		border: 1px solid var(--color-text-light);
 		border-radius: var(--border-radius);
 		padding: 0 16px 16px 16px;
 	}
 
 	&__controls {
 		margin-top: 16px;
+	}
+
+	&__clear-mapping {
+		padding: 16px;
+
+		&__buttons {
+			display: flex;
+			margin-top: 8px;
+			gap: 16px;
+			justify-content: end;
+		}
 	}
 }
 </style>

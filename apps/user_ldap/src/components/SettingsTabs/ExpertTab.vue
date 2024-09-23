@@ -25,17 +25,6 @@
 				:label="t('user_ldap', 'UUID Attribute for Groups')"
 				:value.sync="ldapConfig.ldapExpertUUIDGroupAttr" />
 		</div>
-
-		<div class="ldap-wizard__expert__line">
-			<strong>{{ t('user_ldap', 'Username-LDAP User Mapping') }}</strong>
-			{{ t('user_ldap', 'Usernames are used to store and assign metadata. In order to precisely identify and recognize users, each LDAP user will have an internal username. This requires a mapping from username to LDAP user. The created username is mapped to the UUID of the LDAP user. Additionally the DN is cached as well to reduce LDAP interaction, but it is not used for identification. If the DN changes, the changes will be found. The internal username is used all over. Clearing the mappings will have leftovers everywhere. Clearing the mappings is not configuration sensitive, it affects all LDAP configurations! Never clear the mappings in a production environment, only in a testing or experimental stage.') }}
-			<NcButton @click="console.log('TODO')">
-				{{ t('user_ldap', 'Clear Username-LDAP User Mapping') }}
-			</NcButton>
-			<NcButton @click="console.log('TODO')">
-				{{ t('user_ldap', 'Clear Groupname-LDAP Group Mapping') }}
-			</NcButton>
-		</div>
 	</fieldset>
 </template>
 
@@ -43,7 +32,7 @@
 import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
-import { NcTextField, NcButton } from '@nextcloud/vue'
+import { NcTextField } from '@nextcloud/vue'
 
 import { useLDAPConfigsStore } from '../../store/configs'
 

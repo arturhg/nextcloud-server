@@ -7,7 +7,8 @@
 		<!-- TODO -->
 		<span class="ldap_config_state_indicator" /> <span class="ldap_config_state_indicator_sign" />
 
-		<NcButton href="https://docs.nextcloud.com/server/stable/go.php?to=admin-ldap"
+		<NcButton type="tertiary"
+			href="https://docs.nextcloud.com/server/stable/go.php?to=admin-ldap"
 			target="_blank"
 			rel="noreferrer noopener">
 			<template #icon>
@@ -16,7 +17,7 @@
 			<span>{{ t('user_ldap', 'Help') }}</span>
 		</NcButton>
 
-		<NcButton :disabled="loading" @click="testSelectedConfig">
+		<NcButton type="primary" :disabled="loading" @click="testSelectedConfig">
 			{{ t('user_ldap', 'Test Configuration') }}
 		</NcButton>
 	</div>

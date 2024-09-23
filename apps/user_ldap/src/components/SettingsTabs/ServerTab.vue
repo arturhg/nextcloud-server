@@ -11,7 +11,8 @@
 					<ContentCopy :size="20" />
 				</template>
 			</NcButton>
-			<NcButton :aria-label="t('user_ldap', 'Delete the current configuration')"
+			<NcButton type="error"
+				:aria-label="t('user_ldap', 'Delete the current configuration')"
 				@click="() => ldapConfigsStore.removeConfig(ldapConfigId)">
 				<template #icon>
 					<Delete :size="20" />

@@ -4,7 +4,7 @@
  -->
 <template>
 	<fieldset class="ldap-wizard__advanced">
-		<details name="ldap-wizard__advanced__section" class="ldap-wizard__advanced__section">
+		<details open="true" name="ldap-wizard__advanced__section" class="ldap-wizard__advanced__section">
 			<summary><h3>{{ t('user_ldap', 'Connection Settings') }}</h3></summary>
 
 			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapConfigurationActive === '1'"
@@ -223,13 +223,14 @@ import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import { getCapabilities } from '@nextcloud/capabilities'
 
 import { useLDAPConfigsStore } from '../../store/configs'
 
 const ldapConfigsStore = useLDAPConfigsStore()
 const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
-const instanceName = 'TODO'
+const instanceName = (getCapabilities() as { theming: { name:string } }).theming.name
 </script>
 <style lang="scss" scoped>
 .ldap-wizard__advanced {
@@ -240,9 +241,16 @@ const instanceName = 'TODO'
 	&__section {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		border: 1px solid var(--color-text-lighter);
+		border-radius: var(--border-radius);
+		padding: 8px;
+
+		& > * {
+			margin-top: 12px !important;
+		}
 
 		summary {
+			margin-top: 0 !important;
 
 			h3 {
 				margin: 0;

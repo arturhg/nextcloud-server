@@ -7,32 +7,36 @@
 		{{ t('user_ldap', 'When logging in, {instanceName} will find the user based on the following attributes:', { instanceName }) }}
 
 		<div class="ldap-wizard__login__line ldap-wizard__login__login-attributes">
-			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapLoginFilterUsername === '1'"
+			<NcCheckboxRadioSwitch :disabled="ldapConfig.ldapLoginFilterMode === '1'"
+				:checked="ldapConfig.ldapLoginFilterUsername === '1'"
 				:aria-label="t('user_ldap', 'Allows login against the LDAP/AD username, which is either `uid` or `sAMAccountName` and will be detected.')"
 				@update:checked="ldapConfig.ldapLoginFilterUsername = $event ? '1' : '0'">
 				{{ t('user_ldap', 'LDAP/AD Username') }}
 			</NcCheckboxRadioSwitch>
 
-			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapLoginFilterEmail === '1'"
+			<NcCheckboxRadioSwitch :disabled="ldapConfig.ldapLoginFilterMode === '1'"
+				:checked="ldapConfig.ldapLoginFilterEmail === '1'"
 				:aria-label="t('user_ldap', 'Allows login against an email attribute. `mail` and `mailPrimaryAddress` allowed.')"
 				@update:checked="ldapConfig.ldapLoginFilterEmail = $event ? '1' : '0'">
 				{{ t('user_ldap', 'LDAP/AD Email Address') }}
 			</NcCheckboxRadioSwitch>
 
 			<NcSelect v-model="ldapConfig.ldapLoginFilterAttributes"
+				:disabled="ldapConfig.ldapLoginFilterMode === '1'"
 				:options="['TODO']"
 				:input-label="t('user_ldap', 'Other Attributes:')"
 				:multiple="true" />
 		</div>
 
 		<div class="ldap-wizard__login__line ldap-wizard__login__user-login-filter">
-			<NcCheckboxRadioSwitch :checked.sync="editUserLoginFilter">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapLoginFilterMode === '1'"
+				@update:checked="toggleFilterMode">
 				{{ t('user_name', 'Edit LDAP Query') }}
 			</NcCheckboxRadioSwitch>
 
-			<div v-if="!editUserLoginFilter">
+			<div v-if="ldapConfig.ldapLoginFilterMode === '0'">
 				<label>{{ t('user_name', 'LDAP Filter:') }}</label>
-				<span>{{ ldapConfig.ldapLoginFilter }}</span>
+				<code>{{ ldapConfig.ldapLoginFilter }}</code>
 			</div>
 			<div v-else>
 				<NcTextArea :value.sync="ldapConfig.ldapLoginFilter"
@@ -43,8 +47,8 @@
 
 		<div class="ldap-wizard__login__line">
 			<NcTextField :value.sync="testUsername"
-				:helper-text="t('user_ldap', 'Attempts to receive a DN for the given loginname and the current login filter')"
-				:placeholder="t('user_ldap', 'Test Loginname')"
+				:helper-text="t('user_ldap', 'Attempts to receive a DN for the given login name and the current login filter')"
+				:placeholder="t('user_ldap', 'Test Login name')"
 				autocomplete="off" />
 
 			<NcButton :disabled="enableVerifyButton"
@@ -61,25 +65,45 @@ import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextField, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
+import { getCapabilities } from '@nextcloud/capabilities'
 
 import { useLDAPConfigsStore } from '../../store/configs'
 import { useWizardStore } from '../../store/wizard'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { showEnableAutomaticFilterInfo } from '../../services/ldapConfigService'
 
 const ldapConfigsStore = useLDAPConfigsStore()
 const wizardStore = useWizardStore()
 
 const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
-const instanceName = 'TODO'
-const testUsername = ref('TODO')
+const instanceName = (getCapabilities() as { theming: { name:string } }).theming.name
+const testUsername = ref('')
 const enableVerifyButton = ref(false)
-const editUserLoginFilter = ref(false)
 
 /**
  *
  */
 async function verifyLoginName() {
-	const { changes: { ldap_test_base: ldapTestBase } } = await wizardStore.callWizardAction('testLoginName', { testUsername: testUsername.value })
+	const { changes: { ldap_test_loginname: testLoginName, ldap_test_effective_filter: testEffectiveFilter } } = await wizardStore.callWizardAction('testLoginName', { ldap_test_loginname: testUsername.value })
+
+	if (testLoginName === 1) {
+		showSuccess(t('user_ldap', 'User found and settings verified.'))
+	} else {
+		showError(t('user_ldap', 'User not found. Please check your login attributes and username. Effective filter (to copy-and-paste for command-line validation): {filter}', { filter: testEffectiveFilter }))
+	}
+}
+
+/**
+ *
+ * @param value
+ */
+async function toggleFilterMode(value: boolean) {
+	if (value) {
+		ldapConfig.value.ldapLoginFilterMode = '1'
+	} else {
+		ldapConfig.value.ldapLoginFilterMode = await showEnableAutomaticFilterInfo()
+	}
 }
 </script>
 <style lang="scss" scoped>
@@ -95,6 +119,7 @@ async function verifyLoginName() {
 	&__line {
 		display: flex;
 		align-items: start;
+		gap: 8px;
 	}
 
 	&__login-attributes {
@@ -105,6 +130,12 @@ async function verifyLoginName() {
 	&__user-login-filter {
 		display: flex;
 		flex-direction: column;
+
+		code {
+			background-color: var(--color-background-dark);
+			padding: 4px;
+			border-radius: 4px;
+		}
 	}
 }
 </style>

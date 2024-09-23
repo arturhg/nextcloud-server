@@ -9,8 +9,9 @@ import axios, { AxiosError, type AxiosResponse } from '@nextcloud/axios'
 import { getAppRootUrl, generateOcsUrl } from '@nextcloud/router'
 
 import type { LDAPConfig } from '../models'
-import { showError, showSuccess } from '@nextcloud/dialogs'
+import { DialogSeverity, getDialogBuilder, showError, showSuccess } from '@nextcloud/dialogs'
 import type { OCSResponse } from '@nextcloud/typings/ocs'
+import { t } from '@nextcloud/l10n'
 
 const AJAX_ENDPOINT = path.join(getAppRootUrl('user_ldap'), '/ajax')
 
@@ -75,7 +76,7 @@ export async function deleteConfig(configId: string): Promise<boolean> {
 		await axios.delete(generateOcsUrl('apps/user_ldap/api/v1/config/{configId}', { configId }))
 	} catch (error) {
 		const errorResponse = (error as AxiosError<OCSResponse>).response
-		showError(errorResponse?.data.ocs.meta.message || 'Fail to delete config')
+		showError(errorResponse?.data.ocs.meta.message || t('user_ldap', 'Fail to delete config'))
 	}
 
 	return true
@@ -116,7 +117,11 @@ export async function clearMapping(subject: 'user' | 'group') {
 		params,
 	)
 
-	return response.data // TODO: check response content
+	if (response.data.status === 'success') {
+		showSuccess(t('user_ldap', 'Mapping cleared'))
+	} else {
+		showError(t('user_ldap', 'Failed to clear mapping'))
+	}
 }
 
 /**
@@ -141,8 +146,36 @@ export async function callWizard(action: WizardAction, configId: string, extraPa
 
 	if (response.data.status === 'error') {
 		showError(response.data.message)
-		throw new Error('Error when calling wizard.php')
+		throw new Error(t('user_ldap', 'Error when calling wizard.php'))
 	}
 
 	return response.data
+}
+
+/**
+ *
+ * @param value
+ */
+export async function showEnableAutomaticFilterInfo(): Promise<'0'|'1'> {
+	return new Promise((resolve) => {
+		const dialog = getDialogBuilder(t('user_ldap', 'Mode switch'))
+			.setText(t('user_ldap', 'Switching the mode will enable automatic LDAP queries. Depending on your LDAP size they may take a while. Do you still want to switch the mode?'))
+			.addButton({
+				label: t('user_ldap', 'No'),
+				callback() {
+					dialog.hide()
+					resolve('1')
+				},
+			})
+			.addButton({
+				label: t('user_ldap', 'Yes'),
+				callback() {
+					resolve('0')
+				},
+			})
+			.setSeverity(DialogSeverity.Info)
+			.build()
+
+		dialog.show()
+	})
 }

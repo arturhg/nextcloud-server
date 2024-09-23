@@ -50,13 +50,14 @@
 		</div>
 
 		<div class="ldap-wizard__groups__line ldap-wizard__groups__groups-filter">
-			<NcCheckboxRadioSwitch :checked.sync="editGroupsFilter">
+			<NcCheckboxRadioSwitch :checked="ldapConfig.ldapGroupFilterMode === '1'"
+				@update:checked="toggleFilterMode">
 				{{ t('user_name', 'Edit LDAP Query') }}
 			</NcCheckboxRadioSwitch>
 
-			<div v-if="!editGroupsFilter">
+			<div v-if="ldapConfig.ldapGroupFilterMode === '0'">
 				<label>{{ t('user_name', 'LDAP Filter:') }}</label>
-				<span>{{ ldapConfig.ldapGroupFilter }}</span>
+				<code>{{ ldapConfig.ldapGroupFilter }}</code>
 			</div>
 			<div v-else>
 				<NcTextArea :value.sync="ldapConfig.ldapGroupFilter"
@@ -81,18 +82,19 @@ import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
+import { getCapabilities } from '@nextcloud/capabilities'
 
 import { useLDAPConfigsStore } from '../../store/configs'
+import { showEnableAutomaticFilterInfo } from '../../services/ldapConfigService'
 import { useWizardStore } from '../../store/wizard'
 
 const ldapConfigsStore = useLDAPConfigsStore()
 const wizardStore = useWizardStore()
 const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
-const instanceName = 'TODO'
+const instanceName = (getCapabilities() as { theming: { name:string } }).theming.name
 
 const groupsCount = ref<number|undefined>(undefined)
-const editGroupsFilter = ref(false)
 const allowUserFilterGroupsSelection = ref(false)
 
 /**
@@ -101,6 +103,18 @@ const allowUserFilterGroupsSelection = ref(false)
 async function countGroups() {
 	const { changes: { ldap_test_base: ldapTestBase } } = await wizardStore.callWizardAction('countGroups')
 	groupsCount.value = ldapTestBase
+}
+
+/**
+ *
+ * @param value
+ */
+async function toggleFilterMode(value: boolean) {
+	if (value) {
+		ldapConfig.value.ldapGroupFilterMode = '1'
+	} else {
+		ldapConfig.value.ldapGroupFilterMode = await showEnableAutomaticFilterInfo()
+	}
 }
 </script>
 <style lang="scss" scoped>
@@ -121,6 +135,12 @@ async function countGroups() {
 	&__groups-filter {
 		display: flex;
 		flex-direction: column;
+
+		code {
+			background-color: var(--color-background-dark);
+			padding: 4px;
+			border-radius: 4px;
+		}
 	}
 
 	&__groups-count-check {
