@@ -6,16 +6,6 @@
 	<Settings />
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-
+<script lang="ts" setup>
 import Settings from './views/Settings.vue'
-
-export default defineComponent({
-	name: 'LDAPSettingsApp',
-
-	components: {
-		Settings,
-	},
-})
 </script>

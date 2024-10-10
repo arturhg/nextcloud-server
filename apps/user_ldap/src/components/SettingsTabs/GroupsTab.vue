@@ -14,6 +14,7 @@
 				:input-label="t('user_ldap', 'Only these object classes:')"
 				:multiple="true" />
 
+			<!-- TODO -->
 			<!-- <input type="text" class="ldapManyGroupsSupport ldapManyGroupsSearch hidden" placeholder="t('user_ldap', 'Search groups')"> -->
 			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectclass"
 				class="ldap-wizard__groups__group-filter-groups__select"

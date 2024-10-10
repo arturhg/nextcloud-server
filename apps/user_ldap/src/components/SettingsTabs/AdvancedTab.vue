@@ -81,26 +81,16 @@
 				:placeholder="t('user_ldap', 'Optional; one attribute per line')"
 				:label="t('user_ldap', 'Group Search Attributes')" />
 
-			<!-- TODO -->
-			<!-- <label for="ldap_group_member_assoc_attribute">{{ t('user_ldap', 'Group-Member association') }}</label>
-			<select id="ldap_group_member_assoc_attribute" :value="ldapConfig.ldapGroupMemberAssocAttribute">
-				<option value="uniqueMember" :selected="ldap_group_member_assoc_attribute === 'uniqueMember'">
-					{{ t('user_ldap', 'uniqueMember') }}
-				</option>
-				<option value="memberUid" :selected="ldap_group_member_assoc_attribute === 'memberUid'">
-					{{ t('user_ldap', 'memberUid') }}
-				</option>
-				<option value="member" :selected="ldap_group_member_assoc_attribute === 'member'">
-					{{ t('user_ldap', 'member (AD)') }}
-				</option>
-				<option value="gidNumber" :selected="ldap_group_member_assoc_attribute === 'gidNumber'">
-					{{ t('user_ldap', 'gidNumber') }}
-				</option>
-				<option value="zimbraMailForwardingAddress"
-					:selected="ldap_group_member_assoc_attribute === 'zimbraMailForwardingAddress'">
-					{{ t('user_ldap', 'zimbraMailForwardingAddress') }}
-				</option>
-			</select> -->
+			<NcSelect v-model="ldapConfig.ldapGroupMemberAssocAttr"
+				:options="Object.keys(groupMemberAssociation)"
+				:input-label="t('user_ldap', 'Group-Member association')">
+				<template #option="{label: configId}">
+					{{ groupMemberAssociation[configId] }}
+				</template>
+				<template #selected-option="{label: configId}">
+					{{ groupMemberAssociation[configId] }}
+				</template>
+			</NcSelect>
 
 			<NcTextField autocomplete="off"
 				:label="t('user_ldap', 'Dynamic Group Member URL')"
@@ -222,7 +212,7 @@
 import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
-import { NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import { NcTextField, NcTextArea, NcCheckboxRadioSwitch, NcSelect } from '@nextcloud/vue'
 import { getCapabilities } from '@nextcloud/capabilities'
 
 import { useLDAPConfigsStore } from '../../store/configs'
@@ -231,6 +221,14 @@ const ldapConfigsStore = useLDAPConfigsStore()
 const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
 
 const instanceName = (getCapabilities() as { theming: { name:string } }).theming.name
+
+const groupMemberAssociation = {
+	uniqueMember: t('user_ldap', 'uniqueMember'),
+	memberUid: t('user_ldap', 'memberUid'),
+	member: t('user_ldap', 'member (AD)'),
+	gidNumber: t('user_ldap', 'gidNumber'),
+	zimbraMailForwardingAddress: t('user_ldap', 'zimbraMailForwardingAddress'),
+}
 </script>
 <style lang="scss" scoped>
 .ldap-wizard__advanced {

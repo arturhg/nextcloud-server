@@ -10,7 +10,6 @@
 			<NcSelect v-model="ldapConfig.ldapUserFilterObjectclass"
 				:disabled="ldapConfig.ldapUserFilterMode === '1'"
 				class="ldap-wizard__users__user-filter-object-class__select"
-				:disable="editUserFilter"
 				:options="['TODO']"
 				:input-label="t('user_name', 'Only these object classes:')"
 				:multiple="true" />
@@ -22,8 +21,9 @@
 				{{ t('user_name', 'Only from these groups:') }}
 			</div>
 
+			<!-- TODO -->
 			<!-- <input type="text" class="ldapManyGroupsSupport ldapManyGroupsSearch hidden" > -->
-			<!-- <NcTextField :disable="editUserFilter"
+			<!-- <NcTextField :disabled="ldapConfig.ldapUserFilterMode === '1'"
 				:value.sync="ldapConfig.ldapUserFilterGroups"
 				:placeholder="t('user_name', 'Search groups')"
 				autocomplete="off" /> -->
