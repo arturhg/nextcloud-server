@@ -139,7 +139,7 @@ class ConfigAPIController extends OCSController {
 			throw new OCSException('An issue occurred when modifying the config.');
 		}
 
-		return new DataResponse();
+		return $this->show($configID, false);
 	}
 
 	/**

@@ -88,9 +88,9 @@ import Delete from 'vue-material-design-icons/Delete.vue'
 
 import { t } from '@nextcloud/l10n'
 import { NcButton, NcTextField, NcTextArea, NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import { showInfo } from '@nextcloud/dialogs'
 
 import { useLDAPConfigsStore } from '../../store/configs'
-import { showInfo } from '@nextcloud/dialogs'
 import { useWizardStore } from '../../store/wizard'
 
 const ldapConfigsStore = useLDAPConfigsStore()
@@ -132,8 +132,8 @@ async function guessBaseDN() {
  */
 async function countInBaseDN() {
 	const { changes: { ldap_test_base: ldapTestBase } } = await callWizardAction('countInBaseDN')
-	showInfo(t('user_ldap', 'Found {count} users in the given Base DN.', { count: ldapTestBase }))
-}
+	// TODO:use the message from wizardTabElementary.js:287
+	showInfo(t('user_ldap', 'Found {count} entries in the given Base DN.', { count: ldapTestBase }))}
 
 </script>
 <style lang="scss" scoped>

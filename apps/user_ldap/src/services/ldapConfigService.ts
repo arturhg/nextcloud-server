@@ -5,13 +5,13 @@
 
 import path from 'path'
 
+import { DialogSeverity, getDialogBuilder, showError, showSuccess } from '@nextcloud/dialogs'
 import axios, { AxiosError, type AxiosResponse } from '@nextcloud/axios'
 import { getAppRootUrl, generateOcsUrl } from '@nextcloud/router'
-
-import type { LDAPConfig } from '../models'
-import { DialogSeverity, getDialogBuilder, showError, showSuccess } from '@nextcloud/dialogs'
 import type { OCSResponse } from '@nextcloud/typings/ocs'
 import { t } from '@nextcloud/l10n'
+
+import type { LDAPConfig } from '../models'
 
 const AJAX_ENDPOINT = path.join(getAppRootUrl('user_ldap'), '/ajax')
 
@@ -59,12 +59,12 @@ export async function getConfig(configId: string): Promise<LDAPConfig> {
  * @param config
  */
 export async function updateConfig(configId: string, config: LDAPConfig): Promise<LDAPConfig> {
-	const response = await axios.put(
+	const response: AxiosResponse<OCSResponse<LDAPConfig>> = await axios.put(
 		generateOcsUrl('apps/user_ldap/api/v1/config/{configId}', { configId }),
 		{ configData: config },
 	)
 
-	return response.data as LDAPConfig
+	return response.data.ocs.data
 }
 
 /**

@@ -7,12 +7,13 @@
 		{{ t('user_name', 'Listing and searching for users is constrained by these criteria:') }}
 
 		<div class="ldap-wizard__users__line ldap-wizard__users__user-filter-object-class">
-			<NcSelect v-model="ldapConfig.ldapUserFilterObjectclass"
+			<NcSelect :model-value="ldapUserFilterObjectclass"
 				:disabled="ldapConfig.ldapUserFilterMode === '1'"
 				class="ldap-wizard__users__user-filter-object-class__select"
-				:options="['TODO']"
+				:options="userObjectClasses"
 				:input-label="t('user_name', 'Only these object classes:')"
-				:multiple="true" />
+				:multiple="true"
+				@update:model-value="updateUserFilterObjectclass" />
 			{{ t('user_name', 'The most common object classes for users are organizationalPerson, person, user, and inetOrgPerson. If you are not sure which object class to select, please consult your directory admin.') }}
 		</div>
 
@@ -28,42 +29,13 @@
 				:placeholder="t('user_name', 'Search groups')"
 				autocomplete="off" /> -->
 
-			<NcSelect v-model="ldapConfig.ldapUserFilterGroups"
+			<NcSelect :model-value="ldapUserFilterGroups"
 				class="ldap-wizard__users__user-filter-groups__select"
 				:disabled="ldapConfig.ldapUserFilterMode === '1'"
-				:options="['TODO']"
-				:disable="allowUserFilterGroupsSelection"
-				:input-label="t('user_name', 'Only these object classes:')"
-				:multiple="true" />
-		</div>
-
-		<!-- TODO -->
-		<div class="ldap-wizard__users__line">
-			<p class="ldapManyGroupsSupport hidden">
-				<select class="ldapGroupList ldapGroupListAvailable"
-					:disabled="ldapConfig.ldapUserFilterMode === '1'"
-					:multiple="true"
-					aria-describedby="ldapGroupListAvailable_instructions"
-					:title="t('user_name', 'Available groups')" />
-			</p>
-			<p id="ldapGroupListAvailable_instructions" class="hidden-visually">
-				{{ t('user_name', 'Available groups') }}
-			</p>
-
-			<span>
-				<NcButton class="ldapGroupListSelect">&gt;</NcButton>
-				<NcButton class="ldapGroupListDeselect">&lt;</NcButton>
-			</span>
-
-			<select class="ldapGroupList ldapGroupListSelected"
-				:disabled="ldapConfig.ldapUserFilterMode === '1'"
+				:options="userGroups"
+				:input-label="t('user_name', 'Only these groups:')"
 				:multiple="true"
-				aria-describedby="ldapGroupListSelected_instructions"
-				:title="t('user_name', 'Selected groups')" />
-
-			<p id="ldapGroupListSelected_instructions" class="hidden-visually">
-				{{ t('user_name', 'Selected groups') }}
-			</p>
+				@update:model-value="updateUserFilterGroups" />
 		</div>
 
 		<div class="ldap-wizard__users__line ldap-wizard__users__user-filter">
@@ -94,7 +66,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
@@ -107,12 +79,42 @@ import { showEnableAutomaticFilterInfo } from '../../services/ldapConfigService'
 
 const wizardStore = useWizardStore()
 const ldapConfigsStore = useLDAPConfigsStore()
-const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
+const { selectedConfig: ldapConfig, updatingConfig } = storeToRefs(ldapConfigsStore)
 
 const usersCount = ref<number|undefined>(undefined)
 
-const allowUserFilterGroupsSelection = ref(true) // TODO
 const instanceName = (getCapabilities() as { theming: { name:string } }).theming.name
+
+const userObjectClasses = ref([] as string[])
+const userGroups = ref([] as string[])
+
+const shouldRequestLdapUserFilter = ref(false)
+
+const ldapUserFilterObjectclass = computed(() => ldapConfig.value.ldapUserFilterObjectclass.split(';').filter((item) => item !== ''))
+function updateUserFilterObjectclass(value: string[]) {
+	ldapConfig.value.ldapUserFilterObjectclass = value.join(';')
+	shouldRequestLdapUserFilter.value = true
+}
+
+const ldapUserFilterGroups = computed(() => ldapConfig.value.ldapUserFilterGroups.split(';').filter((item) => item !== ''))
+function updateUserFilterGroups(value: string[]) {
+	ldapConfig.value.ldapUserFilterGroups = value.join(';')
+	shouldRequestLdapUserFilter.value = true
+}
+
+watch(updatingConfig, async () => {
+	if (shouldRequestLdapUserFilter.value === true && updatingConfig.value === 0 && ldapConfig.value.ldapUserFilterMode === '0') {
+		const response = await wizardStore.callWizardAction('getUserListFilter')
+		ldapConfig.value.ldapUserFilter = response.changes.ldap_userlist_filter
+		shouldRequestLdapUserFilter.value = false
+	}
+})
+
+wizardStore.callWizardAction('determineUserObjectClasses')
+	.then((response) => { userObjectClasses.value = response.options.ldap_userfilter_objectclass })
+
+wizardStore.callWizardAction('determineGroupsForUsers')
+	.then((response) => { userGroups.value = response.options.ldap_userfilter_groups })
 
 /**
  *

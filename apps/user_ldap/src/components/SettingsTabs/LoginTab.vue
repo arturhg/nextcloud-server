@@ -10,24 +10,24 @@
 			<NcCheckboxRadioSwitch :disabled="ldapConfig.ldapLoginFilterMode === '1'"
 				:checked="ldapConfig.ldapLoginFilterUsername === '1'"
 				:aria-label="t('user_ldap', 'Allows login against the LDAP/AD username, which is either `uid` or `sAMAccountName` and will be detected.')"
-				@update:checked="ldapConfig.ldapLoginFilterUsername = $event ? '1' : '0'">
+				@update:checked="updateLoginFilterUsername">
 				{{ t('user_ldap', 'LDAP/AD Username') }}
 			</NcCheckboxRadioSwitch>
 
 			<NcCheckboxRadioSwitch :disabled="ldapConfig.ldapLoginFilterMode === '1'"
 				:checked="ldapConfig.ldapLoginFilterEmail === '1'"
 				:aria-label="t('user_ldap', 'Allows login against an email attribute. `mail` and `mailPrimaryAddress` allowed.')"
-				@update:checked="ldapConfig.ldapLoginFilterEmail = $event ? '1' : '0'">
+				@update:checked="updateLoginFilterEmail">
 				{{ t('user_ldap', 'LDAP/AD Email Address') }}
 			</NcCheckboxRadioSwitch>
 
-			<NcSelect :value="selectedLoginFilterAttributes"
+			<NcSelect :model-value="ldapLoginFilterAttributes"
 				:close-on-select="false"
 				:disabled="ldapConfig.ldapLoginFilterMode === '1'"
 				:options="filteredLoginFilterOptions"
 				:input-label="t('user_ldap', 'Other Attributes:')"
 				:multiple="true"
-				@input="updateLoginFilterAttributes" />
+				@update:model-value="updateLoginFilterAttributes" />
 		</div>
 
 		<div class="ldap-wizard__login__line ldap-wizard__login__user-login-filter">
@@ -62,7 +62,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
@@ -77,25 +77,42 @@ import { showEnableAutomaticFilterInfo } from '../../services/ldapConfigService'
 const ldapConfigsStore = useLDAPConfigsStore()
 const wizardStore = useWizardStore()
 
-const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
+const { selectedConfig: ldapConfig, updatingConfig } = storeToRefs(ldapConfigsStore)
 
 const instanceName = (getCapabilities() as { theming: { name:string } }).theming.name
 const testUsername = ref('')
 const enableVerifyButton = ref(false)
 
 const loginFilterOptions = ref<string[]>([])
-const selectedLoginFilterAttributes = computed(() => ldapConfig.value.ldapLoginFilterAttributes.split(';'))
-const filteredLoginFilterOptions = computed(() => loginFilterOptions.value.filter((option) => !selectedLoginFilterAttributes.value.includes(option)))
 wizardStore.callWizardAction('determineAttributes')
 	.then(({ options }) => { loginFilterOptions.value = options.ldap_loginfilter_attributes })
 
-/**
- *
- * @param value
- */
-function updateLoginFilterAttributes(value) {
+const ldapLoginFilterAttributes = computed(() => ldapConfig.value.ldapLoginFilterAttributes.split(';').filter((item) => item !== ''))
+const filteredLoginFilterOptions = computed(() => loginFilterOptions.value.filter((option) => !ldapLoginFilterAttributes.value.includes(option)))
+function updateLoginFilterAttributes(value: string[]) {
 	ldapConfig.value.ldapLoginFilterAttributes = value.join(';')
+	shouldRequestLdapLoginFilterMode.value = true
 }
+
+function updateLoginFilterUsername(value: string) {
+	ldapConfig.value.ldapLoginFilterUsername = value ? '1' : '0'
+	shouldRequestLdapLoginFilterMode.value = true
+}
+
+function updateLoginFilterEmail(value: string) {
+	ldapConfig.value.ldapLoginFilterEmail = value ? '1' : '0'
+	shouldRequestLdapLoginFilterMode.value = true
+}
+
+const shouldRequestLdapLoginFilterMode = ref(false)
+
+watch(updatingConfig, async () => {
+	if (shouldRequestLdapLoginFilterMode.value === true && updatingConfig.value === 0 && ldapConfig.value.ldapLoginFilterMode === '0') {
+		const response = await wizardStore.callWizardAction('getUserLoginFilter')
+		ldapConfig.value.ldapLoginFilter = response.changes.ldap_login_filter
+		shouldRequestLdapLoginFilterMode.value = false
+	}
+})
 
 /**
  *

@@ -79,9 +79,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
 
 import Plus from 'vue-material-design-icons/Plus.vue'
+import { ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
 import { loadState } from '@nextcloud/initial-state'
@@ -95,8 +96,8 @@ import ExpertTab from '../components/SettingsTabs/ExpertTab.vue'
 import AdvancedTab from '../components/SettingsTabs/AdvancedTab.vue'
 import WizardControls from '../components/WizardControls.vue'
 import { useLDAPConfigsStore } from '../store/configs'
-import { clearMapping, updateConfig } from '../services/ldapConfigService'
-import { storeToRefs } from 'pinia'
+import { clearMapping, updateConfig, } from '../services/ldapConfigService'
+import { useWizardStore } from '../store/wizard'
 
 const ldapModuleInstalled = loadState('user_ldap', 'ldapModuleInstalled')
 
@@ -113,17 +114,15 @@ const rightTabs = {
 }
 
 const ldapConfigsStore = useLDAPConfigsStore()
-const { ldapConfigs, selectedConfigId, selectedConfig } = storeToRefs(ldapConfigsStore)
+const { ldapConfigs, selectedConfigId, selectedConfig, updatingConfig } = storeToRefs(ldapConfigsStore)
 
 const selectedTab = ref('server')
 const clearMappingLoading = ref(false)
 
-ldapConfigsStore.$subscribe(async () => {
-	if (selectedConfigId === undefined) {
-		throw new Error('selectedConfigId should not be undefined')
-	}
-
+watch(ldapConfigsStore.selectedConfig, async () => {
+	updatingConfig.value++
 	await updateConfig(selectedConfigId.value, selectedConfig.value)
+	updatingConfig.value--
 })
 
 /**

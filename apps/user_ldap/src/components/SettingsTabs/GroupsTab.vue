@@ -7,47 +7,23 @@
 		{{ t('user_ldap', 'Groups meeting these criteria are available in {instanceName}:', {instanceName}) }}
 
 		<div class="ldap-wizard__groups__line ldap-wizard__groups__filter-selection">
-			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectclass"
+			<NcSelect :model-value="ldapGroupFilterObjectclass"
 				class="ldap-wizard__groups__group-filter-groups__select"
-				:options="['TODO']"
-				:disable="allowUserFilterGroupsSelection"
+				:options="groupObjectClasses"
+				:disabled="ldapConfig.ldapGroupFilterMode === '1'"
 				:input-label="t('user_ldap', 'Only these object classes:')"
-				:multiple="true" />
+				:multiple="true"
+				@update:model-value="updateGroupFilterObjectclass" />
 
 			<!-- TODO -->
 			<!-- <input type="text" class="ldapManyGroupsSupport ldapManyGroupsSearch hidden" placeholder="t('user_ldap', 'Search groups')"> -->
-			<NcSelect v-model="ldapConfig.ldapGroupFilterObjectclass"
+			<NcSelect :model-value="ldapGroupFilterGroups"
 				class="ldap-wizard__groups__group-filter-groups__select"
-				:options="['TODO']"
-				:disable="allowUserFilterGroupsSelection"
+				:options="groupGroups"
+				:disabled="ldapConfig.ldapGroupFilterMode === '1'"
 				:input-label="t('user_ldap', 'Only from these groups:')"
-				:multiple="true" />
-		</div>
-
-		<!-- TODO -->
-		<div class="ldap-wizard__groups__line">
-			<p class="ldapManyGroupsSupport hidden">
-				<select class="ldapGroupList ldapGroupListAvailable"
-					:multiple="true"
-					aria-describedby="ldapGroupListAvailable_instructions"
-					title="t('user_ldap', 'Available groups')" />
-			</p>
-			<p id="ldapGroupListAvailable_instructions" class="hidden-visually">
-				{{ t('user_ldap', 'Available groups') }}
-			</p>
-
-			<span>
-				<NcButton class="ldapGroupListSelect">&gt;</NcButton><br>
-				<NcButton class="ldapGroupListDeselect">&lt;</NcButton>
-			</span>
-
-			<select class="ldapGroupList ldapGroupListSelected"
 				:multiple="true"
-				aria-describedby="ldapGroupListSelected_instructions"
-				title="t('user_ldap', 'Selected groups')" />
-			<p id="ldapGroupListSelected_instructions" class="hidden-visually">
-				{{ t('user_ldap', 'Selected groups') }}
-			</p>
+				@update:model-value="updateGroupFilterGroups" />
 		</div>
 
 		<div class="ldap-wizard__groups__line ldap-wizard__groups__groups-filter">
@@ -78,7 +54,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { t } from '@nextcloud/l10n'
@@ -91,12 +67,42 @@ import { useWizardStore } from '../../store/wizard'
 
 const ldapConfigsStore = useLDAPConfigsStore()
 const wizardStore = useWizardStore()
-const { selectedConfig: ldapConfig } = storeToRefs(ldapConfigsStore)
+const { selectedConfig: ldapConfig, updatingConfig } = storeToRefs(ldapConfigsStore)
 
 const instanceName = (getCapabilities() as { theming: { name:string } }).theming.name
 
 const groupsCount = ref<number|undefined>(undefined)
-const allowUserFilterGroupsSelection = ref(false)
+
+const groupObjectClasses = ref([] as string[])
+const groupGroups = ref([] as string[])
+
+const shouldRequestLdapGroupFilter = ref(false)
+
+const ldapGroupFilterObjectclass = computed(() => ldapConfig.value.ldapGroupFilterObjectclass.split(';').filter((item) => item !== ''))
+function updateGroupFilterObjectclass(value: string[]) {
+	ldapConfig.value.ldapGroupFilterObjectclass = value.join(';')
+	shouldRequestLdapGroupFilter.value = true
+}
+
+const ldapGroupFilterGroups = computed(() => ldapConfig.value.ldapGroupFilterGroups.split(';').filter((item) => item !== ''))
+function updateGroupFilterGroups(value: string[]) {
+	ldapConfig.value.ldapGroupFilterGroups = value.join(';')
+	shouldRequestLdapGroupFilter.value = true
+}
+
+watch(updatingConfig, async () => {
+	if (shouldRequestLdapGroupFilter.value === true && updatingConfig.value === 0 && ldapConfig.value.ldapGroupFilterMode === '0') {
+		const response = await wizardStore.callWizardAction('getGroupFilter')
+		ldapConfig.value.ldapGroupFilter = response.changes.ldap_group_filter
+		shouldRequestLdapGroupFilter.value = false
+	}
+})
+
+wizardStore.callWizardAction('determineGroupObjectClasses')
+	.then((response) => { groupObjectClasses.value = response.options.ldap_groupfilter_objectclass })
+
+wizardStore.callWizardAction('determineGroupsForGroups')
+	.then((response) => { groupGroups.value = response.options.ldap_groupfilter_groups })
 
 /**
  *

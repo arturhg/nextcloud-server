@@ -14,6 +14,7 @@ export const useLDAPConfigsStore = defineStore('ldap-configs', () => {
 	const ldapConfigs = ref(loadState('user_ldap', 'ldapConfigs') as Record<string, LDAPConfig>)
 	const selectedConfigId = ref<string>(Object.keys(ldapConfigs.value)[0])
 	const selectedConfig = computed<LDAPConfig>(() => ldapConfigs.value[selectedConfigId.value])
+	const updatingConfig = ref(0)
 
 	/**
 	 *
@@ -55,6 +56,7 @@ export const useLDAPConfigsStore = defineStore('ldap-configs', () => {
 		ldapConfigs,
 		selectedConfigId,
 		selectedConfig,
+		updatingConfig,
 		create,
 		copyConfig,
 		removeConfig,
