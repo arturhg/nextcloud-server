@@ -80,6 +80,8 @@ class ComposerStaticInitDAV
         'OCA\\DAV\\CalDAV\\EventReaderRDate' => __DIR__ . '/..' . '/../lib/CalDAV/EventReaderRDate.php',
         'OCA\\DAV\\CalDAV\\EventReaderRRule' => __DIR__ . '/..' . '/../lib/CalDAV/EventReaderRRule.php',
         'OCA\\DAV\\CalDAV\\Export\\ExportService' => __DIR__ . '/..' . '/../lib/CalDAV/Export/ExportService.php',
+        'OCA\\DAV\\CalDAV\\Federation\\FederatedCalendar' => __DIR__ . '/..' . '/../lib/CalDAV/Federation/FederatedCalendar.php',
+        'OCA\\DAV\\CalDAV\\Federation\\FederationSharingPlugin' => __DIR__ . '/..' . '/../lib/CalDAV/Federation/FederationSharingPlugin.php',
         'OCA\\DAV\\CalDAV\\FreeBusy\\FreeBusyGenerator' => __DIR__ . '/..' . '/../lib/CalDAV/FreeBusy/FreeBusyGenerator.php',
         'OCA\\DAV\\CalDAV\\ICSExportPlugin\\ICSExportPlugin' => __DIR__ . '/..' . '/../lib/CalDAV/ICSExportPlugin/ICSExportPlugin.php',
         'OCA\\DAV\\CalDAV\\IRestorable' => __DIR__ . '/..' . '/../lib/CalDAV/IRestorable.php',

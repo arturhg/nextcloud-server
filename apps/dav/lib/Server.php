@@ -13,6 +13,7 @@ use OCA\DAV\CalDAV\BirthdayCalendar\EnablePlugin;
 use OCA\DAV\CalDAV\BirthdayService;
 use OCA\DAV\CalDAV\DefaultCalendarValidator;
 use OCA\DAV\CalDAV\EventComparisonService;
+use OCA\DAV\CalDAV\Federation\FederationSharingPlugin;
 use OCA\DAV\CalDAV\ICSExportPlugin\ICSExportPlugin;
 use OCA\DAV\CalDAV\Publishing\PublishPlugin;
 use OCA\DAV\CalDAV\Schedule\IMipPlugin;
@@ -207,6 +208,8 @@ class Server {
 
 			$this->server->addPlugin(\OCP\Server::get(RateLimitingPlugin::class));
 			$this->server->addPlugin(\OCP\Server::get(CalDavValidatePlugin::class));
+
+			$this->server->addPlugin(\OCP\Server::get(FederationSharingPlugin::class));
 		}
 
 		// addressbook plugins

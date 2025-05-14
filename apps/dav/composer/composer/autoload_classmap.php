@@ -65,6 +65,8 @@ return array(
     'OCA\\DAV\\CalDAV\\EventReaderRDate' => $baseDir . '/../lib/CalDAV/EventReaderRDate.php',
     'OCA\\DAV\\CalDAV\\EventReaderRRule' => $baseDir . '/../lib/CalDAV/EventReaderRRule.php',
     'OCA\\DAV\\CalDAV\\Export\\ExportService' => $baseDir . '/../lib/CalDAV/Export/ExportService.php',
+    'OCA\\DAV\\CalDAV\\Federation\\FederatedCalendar' => $baseDir . '/../lib/CalDAV/Federation/FederatedCalendar.php',
+    'OCA\\DAV\\CalDAV\\Federation\\FederationSharingPlugin' => $baseDir . '/../lib/CalDAV/Federation/FederationSharingPlugin.php',
     'OCA\\DAV\\CalDAV\\FreeBusy\\FreeBusyGenerator' => $baseDir . '/../lib/CalDAV/FreeBusy/FreeBusyGenerator.php',
     'OCA\\DAV\\CalDAV\\ICSExportPlugin\\ICSExportPlugin' => $baseDir . '/../lib/CalDAV/ICSExportPlugin/ICSExportPlugin.php',
     'OCA\\DAV\\CalDAV\\IRestorable' => $baseDir . '/../lib/CalDAV/IRestorable.php',
