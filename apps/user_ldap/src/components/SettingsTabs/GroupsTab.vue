@@ -92,30 +92,32 @@ function updateGroupFilterGroups(value: string[]) {
 
 watch(updatingConfig, async () => {
 	if (shouldRequestLdapGroupFilter.value === true && updatingConfig.value === 0 && ldapConfig.value.ldapGroupFilterMode === '0') {
-		const response = await wizardStore.callWizardAction('getGroupFilter')
-		ldapConfig.value.ldapGroupFilter = response.changes.ldap_group_filter
-		shouldRequestLdapGroupFilter.value = false
+		getGroupFilter()
 	}
-})
+}, { immediate: true })
 
 wizardStore.callWizardAction('determineGroupObjectClasses')
-	.then((response) => { groupObjectClasses.value = response.options.ldap_groupfilter_objectclass })
+.then((response) => {
+	groupObjectClasses.value = response.options.ldap_groupfilter_objectclass
+})
 
 wizardStore.callWizardAction('determineGroupsForGroups')
-	.then((response) => { groupGroups.value = response.options.ldap_groupfilter_groups })
+.then((response) => {
+	groupGroups.value = response.options.ldap_groupfilter_groups
+})
 
-/**
- *
- */
+
+async function getGroupFilter() {
+	const response = await wizardStore.callWizardAction('getGroupFilter')
+	ldapConfig.value.ldapGroupFilter = response.changes.ldap_group_filter
+	shouldRequestLdapGroupFilter.value = false
+}
+
 async function countGroups() {
 	const { changes: { ldap_test_base: ldapTestBase } } = await wizardStore.callWizardAction('countGroups')
 	groupsCount.value = ldapTestBase
 }
 
-/**
- *
- * @param value
- */
 async function toggleFilterMode(value: boolean) {
 	if (value) {
 		ldapConfig.value.ldapGroupFilterMode = '1'
@@ -123,6 +125,8 @@ async function toggleFilterMode(value: boolean) {
 		ldapConfig.value.ldapGroupFilterMode = await showEnableAutomaticFilterInfo()
 	}
 }
+
+getGroupFilter()
 </script>
 <style lang="scss" scoped>
 .ldap-wizard__groups {

@@ -104,30 +104,35 @@ function updateUserFilterGroups(value: string[]) {
 
 watch(updatingConfig, async () => {
 	if (shouldRequestLdapUserFilter.value === true && updatingConfig.value === 0 && ldapConfig.value.ldapUserFilterMode === '0') {
-		const response = await wizardStore.callWizardAction('getUserListFilter')
-		ldapConfig.value.ldapUserFilter = response.changes.ldap_userlist_filter
-		shouldRequestLdapUserFilter.value = false
+		getUserListFilter()
 	}
 })
 
-wizardStore.callWizardAction('determineUserObjectClasses')
-	.then((response) => { userObjectClasses.value = response.options.ldap_userfilter_objectclass })
+async function init() {
+	const response1 = await wizardStore.callWizardAction('determineUserObjectClasses')
+	userObjectClasses.value = response1.options.ldap_userfilter_objectclass
+	ldapConfig.value.ldapUserFilterObjectclass = response1.changes.ldap_userfilter_objectclass
 
-wizardStore.callWizardAction('determineGroupsForUsers')
-	.then((response) => { userGroups.value = response.options.ldap_userfilter_groups })
+	const response2 = await wizardStore.callWizardAction('determineGroupsForUsers')
+	userGroups.value = response2.options.ldap_userfilter_groups
+	ldapConfig.value.ldapUserFilterGroups = response2.changes.ldap_userfilter_groups
 
-/**
- *
- */
+	await getUserListFilter()
+}
+
+init()
+
+async function getUserListFilter() {
+	const response = await wizardStore.callWizardAction('getUserListFilter')
+	ldapConfig.value.ldapUserFilter = response.changes.ldap_userlist_filter
+	shouldRequestLdapUserFilter.value = false
+}
+
 async function countUsers() {
 	const { changes: { ldap_test_base: ldapTestBase } } = await wizardStore.callWizardAction('countUsers')
 	usersCount.value = ldapTestBase
 }
 
-/**
- *
- * @param value
- */
 async function toggleFilterMode(value: boolean) {
 	if (value) {
 		ldapConfig.value.ldapUserFilterMode = '1'

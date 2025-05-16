@@ -108,15 +108,16 @@ const shouldRequestLdapLoginFilterMode = ref(false)
 
 watch(updatingConfig, async () => {
 	if (shouldRequestLdapLoginFilterMode.value === true && updatingConfig.value === 0 && ldapConfig.value.ldapLoginFilterMode === '0') {
-		const response = await wizardStore.callWizardAction('getUserLoginFilter')
-		ldapConfig.value.ldapLoginFilter = response.changes.ldap_login_filter
-		shouldRequestLdapLoginFilterMode.value = false
+		getUserLoginFilter()
 	}
-})
+}, { immediate: true })
 
-/**
- *
- */
+async function getUserLoginFilter() {
+	const response = await wizardStore.callWizardAction('getUserLoginFilter')
+	ldapConfig.value.ldapLoginFilter = response.changes.ldap_login_filter
+	shouldRequestLdapLoginFilterMode.value = false
+}
+
 async function verifyLoginName() {
 	try {
 		const { changes: { ldap_test_loginname: testLoginName, ldap_test_effective_filter: testEffectiveFilter } } = await wizardStore.callWizardAction('testLoginName', { ldap_test_loginname: testUsername.value })
@@ -145,10 +146,6 @@ async function verifyLoginName() {
 	}
 }
 
-/**
- *
- * @param value
- */
 async function toggleFilterMode(value: boolean) {
 	if (value) {
 		ldapConfig.value.ldapLoginFilterMode = '1'
@@ -156,6 +153,8 @@ async function toggleFilterMode(value: boolean) {
 		ldapConfig.value.ldapLoginFilterMode = await showEnableAutomaticFilterInfo()
 	}
 }
+
+getUserLoginFilter()
 </script>
 <style lang="scss" scoped>
 .ldap-wizard__login {
