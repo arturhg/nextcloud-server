@@ -910,12 +910,16 @@ class Trashbin implements IEventListener {
 		$expiration = Server::get(Expiration::class);
 		$size = 0;
 		$count = 0;
+		$trashbinSize = self::getTrashbinSize($user);
+		$freeSpace = self::calculateFreeSpace($trashbinSize, $user);
 		foreach ($files as $file) {
 			$timestamp = $file['mtime'];
 			$filename = $file['name'];
-			if ($expiration->isExpired($timestamp)) {
+			if ($expiration->isExpired($timestamp, $freeSpace <= 0)) {
 				try {
-					$size += self::delete($filename, $user, $timestamp);
+					$deletedSize = self::delete($filename, $user, $timestamp);
+					$size += $deletedSize;
+					$freeSpace += $deletedSize;
 					$count++;
 				} catch (NotPermittedException $e) {
 					Server::get(LoggerInterface::class)->warning('Removing "' . $filename . '" from trashbin failed for user "{user}"',
