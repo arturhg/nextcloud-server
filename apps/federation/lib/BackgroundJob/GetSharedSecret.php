@@ -108,6 +108,7 @@ class GetSharedSecret extends Job {
 					'timeout' => 3,
 					'connect_timeout' => 3,
 					'verify' => !$this->config->getSystemValue('sharing.federation.allowSelfSignedCertificates', false),
+					'headers' => ['Cookie' => 'XDEBUG_SESSION=XDEBUG_ECLIPSE'],
 				]
 			);
 

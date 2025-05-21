@@ -8,6 +8,7 @@ declare(strict_types=1);
  */
 namespace OCA\DAV\DAV\Sharing;
 
+use OCA\DAV\CalDAV\Federation\FederationSharingService;
 use OCA\DAV\Connector\Sabre\Principal;
 use OCP\AppFramework\Db\TTransactional;
 use OCP\ICache;
@@ -33,6 +34,7 @@ abstract class Backend {
 		private Principal $principalBackend,
 		private ICacheFactory $cacheFactory,
 		private SharingService $service,
+		private FederationSharingService $federationSharingService,
 		private LoggerInterface $logger,
 	) {
 		$this->shareCache = $this->cacheFactory->createInMemory();
@@ -53,7 +55,7 @@ abstract class Backend {
 			// We need to validate manually because some principals are only virtual
 			// i.e. Group principals
 			$principalparts = explode('/', $principal, 3);
-			if (count($principalparts) !== 3 || $principalparts[0] !== 'principals' || !in_array($principalparts[1], ['users', 'groups', 'circles'], true)) {
+			if (count($principalparts) !== 3 || $principalparts[0] !== 'principals' || !in_array($principalparts[1], ['users', 'groups', 'circles', 'remote'], true)) {
 				// Invalid principal
 				continue;
 			}
@@ -75,7 +77,11 @@ abstract class Backend {
 				$access = $element['readOnly'] ? Backend::ACCESS_READ : Backend::ACCESS_READ_WRITE;
 			}
 
-			$this->service->shareWith($shareable->getResourceId(), $principal, $access);
+			if ($principalparts[1] === 'remote') {
+				$this->federationSharingService->shareWith($shareable, $principal, $access);
+			} else {
+				$this->service->shareWith($shareable->getResourceId(), $principal, $access);
+			}
 		}
 		foreach ($remove as $element) {
 			$principal = $this->principalBackend->findByUri($element, '');
@@ -199,7 +205,7 @@ abstract class Backend {
 
 	public function unshare(IShareable $shareable, string $principalUri): bool {
 		$this->shareCache->clear();
-		
+
 		$principal = $this->principalBackend->findByUri($principalUri, '');
 		if (empty($principal)) {
 			return false;

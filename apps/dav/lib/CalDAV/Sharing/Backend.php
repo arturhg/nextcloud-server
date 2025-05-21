@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace OCA\DAV\CalDAV\Sharing;
 
+use OCA\DAV\CalDAV\Federation\FederationSharingService;
 use OCA\DAV\Connector\Sabre\Principal;
 use OCA\DAV\DAV\Sharing\Backend as SharingBackend;
 use OCP\ICacheFactory;
@@ -23,8 +24,9 @@ class Backend extends SharingBackend {
 		private Principal $principalBackend,
 		private ICacheFactory $cacheFactory,
 		private Service $service,
+		private FederationSharingService $federationSharingService,
 		private LoggerInterface $logger,
 	) {
-		parent::__construct($this->userManager, $this->groupManager, $this->principalBackend, $this->cacheFactory, $this->service, $this->logger);
+		parent::__construct($this->userManager, $this->groupManager, $this->principalBackend, $this->cacheFactory, $this->service, $this->federationSharingService, $this->logger);
 	}
 }

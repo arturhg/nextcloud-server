@@ -127,7 +127,7 @@ class SyncService {
 		$options = [
 			'auth' => [$userName, $sharedSecret],
 			'body' => $this->buildSyncCollectionRequestBody($syncToken),
-			'headers' => ['Content-Type' => 'application/xml'],
+			'headers' => ['Content-Type' => 'application/xml', 'Cookie' => 'XDEBUG_SESSION=XDEBUG_ECLIPSE;'],
 			'timeout' => $this->config->getSystemValueInt('caldav_sync_request_timeout', IClient::DEFAULT_REQUEST_TIMEOUT)
 		];
 

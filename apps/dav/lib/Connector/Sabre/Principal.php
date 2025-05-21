@@ -456,6 +456,10 @@ class Principal implements BackendInterface {
 				return $principal['uri'];
 			}
 		}
+		if (str_starts_with($uri, 'remote:')) {
+			$federatedId = substr($uri, strlen('remote:'));
+			return sprintf('principals/remote/%s', urlencode($federatedId));
+		}
 
 		return null;
 	}

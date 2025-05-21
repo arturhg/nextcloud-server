@@ -9,10 +9,13 @@ declare(strict_types=1);
  */
 namespace OCA\DAV\AppInfo;
 
+use OC\Share\Share;
 use OCA\DAV\CalDAV\AppCalendar\AppCalendarPlugin;
 use OCA\DAV\CalDAV\CachedSubscriptionProvider;
+use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\DAV\CalDAV\CalendarManager;
 use OCA\DAV\CalDAV\CalendarProvider;
+use OCA\DAV\CalDAV\Federation\CalendarFederationProvider;
 use OCA\DAV\CalDAV\Reminder\NotificationProvider\AudioProvider;
 use OCA\DAV\CalDAV\Reminder\NotificationProvider\EmailProvider;
 use OCA\DAV\CalDAV\Reminder\NotificationProvider\PushProvider;
@@ -82,6 +85,8 @@ use OCP\Config\BeforePreferenceSetEvent;
 use OCP\Contacts\IManager as IContactsManager;
 use OCP\DB\Events\AddMissingIndicesEvent;
 use OCP\Federation\Events\TrustedServerRemovedEvent;
+use OCP\Federation\ICloudFederationProvider;
+use OCP\Federation\ICloudFederationProviderManager;
 use OCP\Files\AppData\IAppDataFactory;
 use OCP\IUserSession;
 use OCP\Server;
@@ -220,7 +225,6 @@ class Application extends App implements IBootstrap {
 		$context->registerDeclarativeSettings(SystemAddressBookSettings::class);
 		$context->registerEventListener(DeclarativeSettingsGetValueEvent::class, DavAdminSettingsListener::class);
 		$context->registerEventListener(DeclarativeSettingsSetValueEvent::class, DavAdminSettingsListener::class);
-
 	}
 
 	public function boot(IBootContext $context): void {
@@ -230,6 +234,7 @@ class Application extends App implements IBootstrap {
 		$context->injectFn($this->registerContactsManager(...));
 		$context->injectFn($this->registerCalendarManager(...));
 		$context->injectFn($this->registerCalendarReminders(...));
+		$context->injectFn($this->registerCloudFederationProvider(...));
 	}
 
 	public function registerContactsManager(IContactsManager $cm, IAppContainer $container): void {
@@ -285,5 +290,18 @@ class Application extends App implements IBootstrap {
 		} catch (Throwable $ex) {
 			$logger->error($ex->getMessage(), ['exception' => $ex]);
 		}
+	}
+
+	public function registerCloudFederationProvider(
+		ICloudFederationProviderManager $manager,
+	): void {
+		$manager->addCloudFederationProvider(
+			CalendarFederationProvider::SHARE_TYPE,
+			'Calendar Federation',
+			static fn (): ICloudFederationProvider => new CalendarFederationProvider(
+				Server::get(CalDavBackend::class),
+				Server::get(LoggerInterface::class),
+			),
+		);
 	}
 }
