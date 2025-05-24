@@ -56,7 +56,14 @@ class RemoteUserPrincipalBackend implements BackendInterface {
 	}
 
 	public function findByUri($uri, $principalPrefix) {
-		// We don't know about all the remote principals on all remote instances
+		if (str_starts_with($uri, 'principal:')) {
+			$principal = substr($uri, strlen('principal:'));
+			$principal = $this->getPrincipalByPath($principal);
+			if ($principal !== null) {
+				return $principal['uri'];
+			}
+		}
+
 		return null;
 	}
 

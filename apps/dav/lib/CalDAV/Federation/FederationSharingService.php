@@ -11,6 +11,7 @@ namespace OCA\DAV\CalDAV\Federation;
 
 use OCA\DAV\CalDAV\Federation\Protocol\CalendarFederationProtocolV1;
 use OCA\DAV\DAV\Sharing\IShareable;
+use OCA\DAV\DAV\Sharing\SharingMapper;
 use OCP\AppFramework\Http;
 use OCP\Federation\ICloudFederationFactory;
 use OCP\Federation\ICloudFederationProviderManager;
@@ -30,20 +31,21 @@ class FederationSharingService {
 		private readonly IURLGenerator $url,
 		private readonly LoggerInterface $logger,
 		private readonly ISecureRandom $random,
+		private readonly SharingMapper $sharingMapper,
 	) {
 	}
 
-	private function convertPrincipalToFederatedId(string $principal): ?string {
+	private function decodeRemoteUserPrincipal(string $principal): ?string {
 		[$prefix, $collection, $encodedId] = explode('/', $principal);
-		if ($prefix !== 'principals' && $collection !== 'remote') {
+		if ($prefix !== 'principals' && $collection !== 'remote-users') {
 			return null;
 		}
 
-		return urldecode($encodedId);
+		return base64_decode($encodedId);
 	}
 
 	public function shareWith(IShareable $shareable, string $principal, int $access): void {
-		$shareWith = $this->convertPrincipalToFederatedId($principal);
+		$shareWith = $this->decodeRemoteUserPrincipal($principal);
 		if (!$shareWith) {
 			throw new \Exception('Principal is not belonging to a remote user');
 		}
@@ -94,6 +96,7 @@ class FederationSharingService {
 			...$protocol->toProtocol(),
 		]);
 
+		// 1. Send share to federated instance
 		try {
 			$response = $this->federationManager->sendCloudShare($share);
 		} catch (OCMProviderException $e) {
@@ -107,6 +110,11 @@ class FederationSharingService {
 			$this->logger->error('Failed to create federated calendar share: Server replied with code ' . $response->getStatusCode(), [
 				'responseBody' => $response->getBody(),
 			]);
+			return;
 		}
+
+		// 2. Create a local DAV share to track the auth token
+		$this->sharingMapper->deleteShare($shareable->getResourceId(), 'calendar', $principal);
+		$this->sharingMapper->shareWithToken($shareable->getResourceId(), 'calendar', $access, $principal, $token);
 	}
 }

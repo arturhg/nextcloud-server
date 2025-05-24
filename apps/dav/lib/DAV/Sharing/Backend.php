@@ -9,7 +9,9 @@ declare(strict_types=1);
 namespace OCA\DAV\DAV\Sharing;
 
 use OCA\DAV\CalDAV\Federation\FederationSharingService;
+use OCA\DAV\CalDAV\Principal\Collection;
 use OCA\DAV\Connector\Sabre\Principal;
+use OCA\DAV\DAV\RemoteUserPrincipalBackend;
 use OCP\AppFramework\Db\TTransactional;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -32,6 +34,7 @@ abstract class Backend {
 		private IUserManager $userManager,
 		private IGroupManager $groupManager,
 		private Principal $principalBackend,
+		private RemoteUserPrincipalBackend $remoteUserPrincipalBackend,
 		private ICacheFactory $cacheFactory,
 		private SharingService $service,
 		private FederationSharingService $federationSharingService,
@@ -47,7 +50,9 @@ abstract class Backend {
 	public function updateShares(IShareable $shareable, array $add, array $remove, array $oldShares = []): void {
 		$this->shareCache->clear();
 		foreach ($add as $element) {
-			$principal = $this->principalBackend->findByUri($element['href'], '');
+			// Hacky code below ... shouldn't we check the whole (principal) root collection instead?
+			$principal = $this->principalBackend->findByUri($element['href'], '')
+				?? $this->remoteUserPrincipalBackend->findByUri($element['href'], '');
 			if (empty($principal)) {
 				continue;
 			}
@@ -55,7 +60,7 @@ abstract class Backend {
 			// We need to validate manually because some principals are only virtual
 			// i.e. Group principals
 			$principalparts = explode('/', $principal, 3);
-			if (count($principalparts) !== 3 || $principalparts[0] !== 'principals' || !in_array($principalparts[1], ['users', 'groups', 'circles', 'remote'], true)) {
+			if (count($principalparts) !== 3 || $principalparts[0] !== 'principals' || !in_array($principalparts[1], ['users', 'groups', 'circles', 'remote-users'], true)) {
 				// Invalid principal
 				continue;
 			}
@@ -77,7 +82,7 @@ abstract class Backend {
 				$access = $element['readOnly'] ? Backend::ACCESS_READ : Backend::ACCESS_READ_WRITE;
 			}
 
-			if ($principalparts[1] === 'remote') {
+			if ($principalparts[1] === 'remote-users') {
 				$this->federationSharingService->shareWith($shareable, $principal, $access);
 			} else {
 				$this->service->shareWith($shareable->getResourceId(), $principal, $access);

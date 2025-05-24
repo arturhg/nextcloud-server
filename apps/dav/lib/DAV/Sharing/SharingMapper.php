@@ -83,6 +83,19 @@ class SharingMapper {
 		$query->executeStatement();
 	}
 
+	public function shareWithToken(int $resourceId, string $resourceType, int $access, string $principal, string $token): void {
+		$query = $this->db->getQueryBuilder();
+		$query->insert('dav_shares')
+			->values([
+				'principaluri' => $query->createNamedParameter($principal),
+				'type' => $query->createNamedParameter($resourceType),
+				'access' => $query->createNamedParameter($access),
+				'resourceid' => $query->createNamedParameter($resourceId),
+				'token' => $query->createNamedParameter($token),
+			]);
+		$query->executeStatement();
+	}
+
 	public function deleteShare(int $resourceId, string $resourceType, string $principal): void {
 		$query = $this->db->getQueryBuilder();
 		$query->delete('dav_shares');
