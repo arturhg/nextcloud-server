@@ -136,6 +136,7 @@ abstract class Backend {
 				'commonName' => isset($p['{DAV:}displayname']) ? (string)$p['{DAV:}displayname'] : '',
 				'status' => 1,
 				'readOnly' => (int)$row['access'] === Backend::ACCESS_READ,
+				'token' => isset($row['token']) ? $row['token'] : '',
 				'{http://owncloud.org/ns}principal' => (string)$row['principaluri'],
 				'{http://owncloud.org/ns}group-share' => isset($p['uri']) && (str_starts_with($p['uri'], 'principals/groups') || str_starts_with($p['uri'], 'principals/circles'))
 			];

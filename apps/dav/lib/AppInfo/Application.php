@@ -16,6 +16,7 @@ use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\DAV\CalDAV\CalendarManager;
 use OCA\DAV\CalDAV\CalendarProvider;
 use OCA\DAV\CalDAV\Federation\CalendarFederationProvider;
+use OCA\DAV\CalDAV\Federation\FederatedCalendarProvider;
 use OCA\DAV\CalDAV\Reminder\NotificationProvider\AudioProvider;
 use OCA\DAV\CalDAV\Reminder\NotificationProvider\EmailProvider;
 use OCA\DAV\CalDAV\Reminder\NotificationProvider\PushProvider;
@@ -40,6 +41,7 @@ use OCA\DAV\Events\CalendarUpdatedEvent;
 use OCA\DAV\Events\CardCreatedEvent;
 use OCA\DAV\Events\CardDeletedEvent;
 use OCA\DAV\Events\CardUpdatedEvent;
+use OCA\DAV\Events\SabrePluginAuthInitEvent;
 use OCA\DAV\Events\SubscriptionCreatedEvent;
 use OCA\DAV\Events\SubscriptionDeletedEvent;
 use OCA\DAV\Listener\ActivityUpdaterListener;
@@ -55,6 +57,7 @@ use OCA\DAV\Listener\CardListener;
 use OCA\DAV\Listener\ClearPhotoCacheListener;
 use OCA\DAV\Listener\DavAdminSettingsListener;
 use OCA\DAV\Listener\OutOfOfficeListener;
+use OCA\DAV\Listener\SabrePluginAuthInitListener;
 use OCA\DAV\Listener\SubscriptionListener;
 use OCA\DAV\Listener\TrustedServerRemovedListener;
 use OCA\DAV\Listener\UserEventsListener;
@@ -210,10 +213,13 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(UserChangedEvent::class, UserEventsListener::class);
 		$context->registerEventListener(UserUpdatedEvent::class, UserEventsListener::class);
 
+		$context->registerEventListener(SabrePluginAuthInitEvent::class, SabrePluginAuthInitListener::class);
+
 		$context->registerNotifierService(Notifier::class);
 
 		$context->registerCalendarProvider(CalendarProvider::class);
 		$context->registerCalendarProvider(CachedSubscriptionProvider::class);
+		//$context->registerCalendarProvider(FederatedCalendarProvider::class);
 
 		$context->registerUserMigrator(CalendarMigrator::class);
 		$context->registerUserMigrator(ContactsMigrator::class);
@@ -298,10 +304,13 @@ class Application extends App implements IBootstrap {
 		$manager->addCloudFederationProvider(
 			CalendarFederationProvider::SHARE_TYPE,
 			'Calendar Federation',
+			static fn() => Server::get(CalendarFederationProvider::class),
+			/*
 			static fn (): ICloudFederationProvider => new CalendarFederationProvider(
 				Server::get(CalDavBackend::class),
 				Server::get(LoggerInterface::class),
 			),
+			*/
 		);
 	}
 }

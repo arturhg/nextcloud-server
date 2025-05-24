@@ -10,18 +10,24 @@ declare(strict_types=1);
 namespace OCA\DAV\CalDAV\Federation;
 
 use OCA\DAV\CalDAV\CalDavBackend;
-use OCA\Mail\Vendor\Psr\Log\LoggerInterface;
+use OCA\DAV\CalDAV\Federation\Protocol\CalendarFederationProtocolV1;
+use OCA\DAV\CalDAV\Federation\Protocol\ICalendarFederationProtocol;
 use OCP\AppFramework\Http;
 use OCP\Federation\Exceptions\ProviderCouldNotAddShareException;
 use OCP\Federation\ICloudFederationProvider;
 use OCP\Federation\ICloudFederationShare;
+use OCP\Federation\ICloudIdManager;
+use Psr\Log\LoggerInterface;
 
 class CalendarFederationProvider implements ICloudFederationProvider {
 	public const SHARE_TYPE = 'calendar';
+	public const CALENDAR_RESOURCE = 'calendar';
 
 	public function __construct(
 		private readonly CalDavBackend $calDavBackend,
 		private readonly LoggerInterface $logger,
+		private readonly ICloudIdManager $cloudIdManager,
+		private readonly FederatedCalendarMapper $federatedCalendarMapper,
 	) {
 	}
 
@@ -40,28 +46,62 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 			// TODO: Implement group shares
 		}
 
-		$protocol = $share->getProtocol();
-		$calendarUri = $protocol['uri'];
-		$displayName = $protocol['displayName'];
-		$remoteBase = $protocol['remoteBase'];
-
-		if (!$calendarUri || !$displayName || !$remoteBase) {
-			throw new ProviderCouldNotAddShareException('Required request data not found', '', Http::STATUS_BAD_REQUEST);
+		$rawProtocol = $share->getProtocol();
+		// TODO: test what happens if no version in protocol
+		switch ($rawProtocol[ICalendarFederationProtocol::PROP_VERSION]) {
+			case CalendarFederationProtocolV1::VERSION:
+				$protocol = CalendarFederationProtocolV1::parse($rawProtocol);
+				$calendarUrl = $protocol->getUrl();
+				$displayName = $protocol->getDisplayName();
+				$color = $protocol->getColor();
+				$access = $protocol->getAccess();
+				break;
+			default:
+				throw new ProviderCouldNotAddShareException(
+					'Unknown protocol version',
+					'',
+					Http::STATUS_BAD_REQUEST,
+				);
 		}
 
-		$principal = 'principals/users/' . $share->getShareWith();
-		$existingCalendar = $this->calDavBackend->getCalendarByUri($principal, $calendarUri);
-		if ($existingCalendar) {
-			throw new ProviderCouldNotAddShareException('Calendar has already been shared with the user', '', Http::STATUS_CONFLICT);
+		if (!$calendarUrl || !$displayName || !$color || !$access) {
+			throw new ProviderCouldNotAddShareException(
+				'Incomplete protocol data',
+				'',
+				Http::STATUS_BAD_REQUEST,
+			);
 		}
 
-		$calendarId = $this->calDavBackend->createCalendar($principal, $calendarUri, [
-			CalDavBackend::PROP_FEDERATED => 'true',
-			CalDavBackend::PROP_FEDERATION_TOKEN => $share->getShareSecret(),
-			CalDavBackend::PROP_FEDERATION_REMOTE => $remoteBase,
-			'{DAV:}displayname' => $displayName,
-		]);
-		return (string)$calendarId;
+		//$sharedBy = $this->cloudIdManager->resolveCloudId($share->getSharedBy());
+
+		$calendarUri = hash('md5', $calendarUrl);
+
+		$sharedWithPrincipal = 'principals/users/' . $share->getShareWith();
+		$hasExistingCalendar = $this->federatedCalendarMapper->hasCalendarWithUriAndPrincipalUri(
+			$calendarUri,
+			$sharedWithPrincipal,
+		);
+		if ($hasExistingCalendar) {
+			throw new ProviderCouldNotAddShareException(
+				'Calendar has already been shared with the user',
+				'',
+				Http::STATUS_CONFLICT,
+			);
+		}
+
+		$calendar = new FederatedCalendarEntity();
+		$calendar->setPrincipaluri($sharedWithPrincipal);
+		$calendar->setUri($calendarUri);
+		$calendar->setRemoteUrl($calendarUrl);
+		$calendar->setDisplayName($displayName);
+		$calendar->setColor($color);
+		$calendar->setPermissions(1); // TODO: handle permissions
+		$calendar->setToken($share->getShareSecret());
+		$calendar->setSharedBy($share->getSharedBy());
+		$calendar->setSharedByDisplayName($share->getSharedByDisplayName());
+		$calendar->setPermissions($access);
+		$calendar = $this->federatedCalendarMapper->insert($calendar);
+		return (string)$calendar->getId();
 	}
 
 	public function notificationReceived($notificationType, $providerId, array $notification) {

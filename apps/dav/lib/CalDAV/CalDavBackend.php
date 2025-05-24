@@ -111,6 +111,7 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 
 	public const CALENDAR_TYPE_CALENDAR = 0;
 	public const CALENDAR_TYPE_SUBSCRIPTION = 1;
+	public const CALENDAR_TYPE_FEDERATED = 2;
 
 	public const PERSONAL_CALENDAR_URI = 'personal';
 	public const PERSONAL_CALENDAR_NAME = 'Personal';
@@ -1425,10 +1426,12 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 				$shares = $this->getShares($calendarId);
 
 				$this->dispatcher->dispatchTyped(new CalendarObjectCreatedEvent($calendarId, $calendarRow, $shares, $objectRow));
-			} else {
+			} elseif ($calendarType === self::CALENDAR_TYPE_SUBSCRIPTION) {
 				$subscriptionRow = $this->getSubscriptionById($calendarId);
 
 				$this->dispatcher->dispatchTyped(new CachedCalendarObjectCreatedEvent($calendarId, $subscriptionRow, [], $objectRow));
+			} elseif ($calendarType === self::CALENDAR_TYPE_FEDERATED) {
+				// TODO: implement custom event for federated calendars
 			}
 
 			return '"' . $extraData['etag'] . '"';
@@ -1485,10 +1488,12 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 					$shares = $this->getShares($calendarId);
 
 					$this->dispatcher->dispatchTyped(new CalendarObjectUpdatedEvent($calendarId, $calendarRow, $shares, $objectRow));
-				} else {
+				} elseif ($calendarType === self::CALENDAR_TYPE_SUBSCRIPTION) {
 					$subscriptionRow = $this->getSubscriptionById($calendarId);
 
 					$this->dispatcher->dispatchTyped(new CachedCalendarObjectUpdatedEvent($calendarId, $subscriptionRow, [], $objectRow));
+				} elseif ($calendarType === self::CALENDAR_TYPE_FEDERATED) {
+					// TODO: implement custom event for federated calendars
 				}
 			}
 
@@ -2012,8 +2017,11 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 		$outerQuery = $this->db->getQueryBuilder();
 		$innerQuery = $this->db->getQueryBuilder();
 
+		// TODO: improve this
 		if (isset($calendarInfo['source'])) {
 			$calendarType = self::CALENDAR_TYPE_SUBSCRIPTION;
+		} elseif (isset($calendarInfo['federated'])) {
+			$calendarType = self::CALENDAR_TYPE_FEDERATED;
 		} else {
 			$calendarType = self::CALENDAR_TYPE_CALENDAR;
 		}

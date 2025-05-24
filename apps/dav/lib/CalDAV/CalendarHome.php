@@ -8,9 +8,12 @@
 namespace OCA\DAV\CalDAV;
 
 use OCA\DAV\AppInfo\PluginManager;
+use OCA\DAV\CalDAV\Federation\FederatedCalendar_actual;
+use OCA\DAV\CalDAV\Federation\FederatedCalendarMapper;
 use OCA\DAV\CalDAV\Integration\ExternalCalendar;
 use OCA\DAV\CalDAV\Integration\ICalendarProvider;
 use OCA\DAV\CalDAV\Trashbin\TrashbinHome;
+use OCA\DAV\DAV\Sharing\Backend;
 use OCP\App\IAppManager;
 use OCP\IConfig;
 use OCP\IL10N;
@@ -22,6 +25,7 @@ use Sabre\CalDAV\Backend\SchedulingSupport;
 use Sabre\CalDAV\Backend\SubscriptionSupport;
 use Sabre\CalDAV\Schedule\Inbox;
 use Sabre\CalDAV\Subscriptions\Subscription;
+use Sabre\CalDAV\Xml\Property\SupportedCalendarComponentSet;
 use Sabre\DAV\Exception\MethodNotAllowed;
 use Sabre\DAV\Exception\NotFound;
 use Sabre\DAV\INode;
@@ -37,6 +41,8 @@ class CalendarHome extends \Sabre\CalDAV\CalendarHome {
 
 	/** @var PluginManager */
 	private $pluginManager;
+
+	private FederatedCalendarMapper $federatedCalendarMapper;
 	private ?array $cachedChildren = null;
 
 	public function __construct(
@@ -48,6 +54,7 @@ class CalendarHome extends \Sabre\CalDAV\CalendarHome {
 		parent::__construct($caldavBackend, $principalInfo);
 		$this->l10n = \OC::$server->getL10N('dav');
 		$this->config = Server::get(IConfig::class);
+		$this->federatedCalendarMapper = Server::get(FederatedCalendarMapper::class);
 		$this->pluginManager = new PluginManager(
 			\OC::$server,
 			Server::get(IAppManager::class)
@@ -88,6 +95,27 @@ class CalendarHome extends \Sabre\CalDAV\CalendarHome {
 		$objects = [];
 		foreach ($calendars as $calendar) {
 			$objects[] = new Calendar($this->caldavBackend, $calendar, $this->l10n, $this->config, $this->logger);
+		}
+
+		$federatedCalendars = $this->federatedCalendarMapper->findByPrincipalUri($this->principalInfo['uri']);
+		foreach ($federatedCalendars as $federatedCalendar) {
+			// TODO: move this to CalDavBackend? -> Ref subscriptions (rowToSubscription)
+			// TODO: move this to the the entity?
+			$calendarInfo = [
+				'id' => $federatedCalendar->getId(),
+				'uri' => $federatedCalendar->getUri(),
+				'principaluri' => $federatedCalendar->getPrincipaluri(),
+				'federated' => true,
+
+				'{DAV:}displayname' => $federatedCalendar->getDisplayName(),
+				// TODO: load from remote
+				'{' . Plugin::NS_CALDAV . '}supported-calendar-component-set' => new SupportedCalendarComponentSet(['VTODO', 'VEVENT']),
+				'{http://sabredav.org/ns}sync-token' => $federatedCalendar->getSyncToken(),
+				'{' . Plugin::NS_CALENDARSERVER . '}getctag' => $federatedCalendar->getSyncTokenForSabre(),
+				'{' . \OCA\DAV\DAV\Sharing\Plugin::NS_OWNCLOUD . '}owner-principal' => $federatedCalendar->getSharedByPrincipal(),
+				'{' . \OCA\DAV\DAV\Sharing\Plugin::NS_OWNCLOUD . '}read-only' => $federatedCalendar->getPermissions() === Backend::ACCESS_READ,
+			];
+			$objects[] = new FederatedCalendar_actual($this->caldavBackend, $calendarInfo, $this->l10n, $this->config, $this->logger, $this->federatedCalendarMapper);
 		}
 
 		if ($this->caldavBackend instanceof SchedulingSupport) {
@@ -173,6 +201,26 @@ class CalendarHome extends \Sabre\CalDAV\CalendarHome {
 					return new Subscription($this->caldavBackend, $subscription);
 				}
 			}
+		}
+
+		$federatedCalendar = $this->federatedCalendarMapper->findByUri($this->principalInfo['uri'], $name);
+		if ($federatedCalendar) {
+			// TODO: merge with above
+			$calendarInfo = [
+				'id' => $federatedCalendar->getId(),
+				'uri' => $federatedCalendar->getUri(),
+				'principaluri' => $federatedCalendar->getPrincipaluri(),
+				'federated' => true,
+
+				'{DAV:}displayname' => $federatedCalendar->getDisplayName(),
+				// TODO: load from remote
+				'{' . Plugin::NS_CALDAV . '}supported-calendar-component-set' => new SupportedCalendarComponentSet(['VTODO', 'VEVENT']),
+				'{http://sabredav.org/ns}sync-token' => $federatedCalendar->getSyncToken(),
+				'{' . Plugin::NS_CALENDARSERVER . '}getctag' => $federatedCalendar->getSyncTokenForSabre(),
+				'{' . \OCA\DAV\DAV\Sharing\Plugin::NS_OWNCLOUD . '}owner-principal' => $federatedCalendar->getSharedByPrincipal(),
+				'{' . \OCA\DAV\DAV\Sharing\Plugin::NS_OWNCLOUD . '}read-only' => $federatedCalendar->getPermissions() === Backend::ACCESS_READ,
+			];
+			return new FederatedCalendar_actual($this->caldavBackend, $calendarInfo, $this->l10n, $this->config, $this->logger, $this->federatedCalendarMapper);
 		}
 
 		if (ExternalCalendar::isAppGeneratedCalendar($name)) {

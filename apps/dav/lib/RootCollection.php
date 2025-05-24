@@ -21,6 +21,7 @@ use OCA\DAV\CardDAV\AddressBookRoot;
 use OCA\DAV\CardDAV\CardDavBackend;
 use OCA\DAV\Connector\Sabre\Principal;
 use OCA\DAV\DAV\GroupPrincipalBackend;
+use OCA\DAV\DAV\RemoteUserPrincipalBackend;
 use OCA\DAV\DAV\SystemPrincipalBackend;
 use OCA\DAV\Provisioning\Apple\AppleProvisioningNode;
 use OCA\DAV\SystemTag\SystemTagsByIdCollection;
@@ -76,6 +77,7 @@ class RootCollection extends SimpleCollection {
 		$groupPrincipalBackend = new GroupPrincipalBackend($groupManager, $userSession, $shareManager, $config);
 		$calendarResourcePrincipalBackend = new ResourcePrincipalBackend($db, $userSession, $groupManager, $logger, $proxyMapper);
 		$calendarRoomPrincipalBackend = new RoomPrincipalBackend($db, $userSession, $groupManager, $logger, $proxyMapper);
+		$remoteUserPrincipalBackend = new RemoteUserPrincipalBackend();
 		// as soon as debug mode is enabled we allow listing of principals
 		$disableListing = !$config->getSystemValue('debug', false);
 
@@ -88,6 +90,7 @@ class RootCollection extends SimpleCollection {
 		$systemPrincipals->disableListing = $disableListing;
 		$calendarResourcePrincipals = new Collection($calendarResourcePrincipalBackend, 'principals/calendar-resources');
 		$calendarRoomPrincipals = new Collection($calendarRoomPrincipalBackend, 'principals/calendar-rooms');
+		$remoteUserPrincipals = new Collection($remoteUserPrincipalBackend, RemoteUserPrincipalBackend::PRINCIPAL_PREFIX);
 		$calendarSharingBackend = Server::get(Backend::class);
 
 		$filesCollection = new Files\RootCollection($userPrincipalBackend, 'principals/users');
@@ -176,7 +179,8 @@ class RootCollection extends SimpleCollection {
 				$groupPrincipals,
 				$systemPrincipals,
 				$calendarResourcePrincipals,
-				$calendarRoomPrincipals]),
+				$calendarRoomPrincipals,
+				$remoteUserPrincipals]),
 			$filesCollection,
 			$userCalendarRoot,
 			new SimpleCollection('system-calendars', [

@@ -13,6 +13,7 @@ use OCA\DAV\CalDAV\Integration\ExternalCalendar;
 use OCA\DAV\CalDAV\Plugin;
 use OCP\Calendar\ICalendar;
 use OCP\Calendar\ICreateFromString;
+use OCP\Calendar\IDeleteable;
 use OCP\Constants;
 use Sabre\CalDAV\CalendarQueryValidator;
 use Sabre\CalDAV\ICalendarObject;
@@ -93,8 +94,12 @@ class AppCalendar extends ExternalCalendar {
 	}
 
 	public function delete(): void {
-		// No method for deleting a calendar in OCP\Calendar\ICalendar
-		throw new Forbidden('Deleting an entry is not implemented');
+		if (!($this->calendar instanceof IDeleteable)) {
+			// No method for deleting a calendar in OCP\Calendar\ICalendar
+			throw new Forbidden('Deleting an entry is not implemented');
+		}
+
+		$this->calendar->delete();
 	}
 
 	public function createFile($name, $data = null) {
@@ -183,8 +188,10 @@ class AppCalendar extends ExternalCalendar {
 			$result[$uid][] = $object;
 		}
 
+		stat('/usr/bin/bash');
+
 		return array_map(function (array $children) {
-			return new CalendarObject($this, $this->calendar, new VCalendar($children));
+			return new CalendarObject($this, $this->calendar, new VCalendar(['VEVENT' => $children]));
 		}, $result);
 	}
 

@@ -7,9 +7,8 @@
 
 namespace OCA\Federation\Command;
 
-use OCA\Federation\DbHandler;
-use OCA\Federation\SyncFederationCalendars as SyncService;
-use OCP\OCS\IDiscoveryService;
+use OCA\DAV\CalDAV\Federation\FederatedCalendarMapper;
+use OCA\DAV\CalDAV\Federation\FederatedCalendarSyncService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,9 +16,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class SyncFederationCalendars extends Command {
 	public function __construct(
-		private readonly SyncService $syncService,
-		private readonly DbHandler $dbHandler,
-		private readonly IDiscoveryService $ocsDiscoveryService,
+		private readonly FederatedCalendarSyncService $syncService,
+		private readonly FederatedCalendarMapper $federatedCalendarMapper,
 	) {
 		parent::__construct();
 	}
@@ -30,35 +28,24 @@ class SyncFederationCalendars extends Command {
 			->setDescription('TODO');
 	}
 
-	private function findTrustedServer(string $needle): ?array {
-		$trustedServers = $this->dbHandler->getAllServer();
-		foreach ($trustedServers as $trustedServer) {
-			if (str_contains($trustedServer['url'], $needle)) {
-				return $trustedServer;
-			}
-		}
-
-		return null;
-	}
-
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		$progress = new ProgressBar($output);
+		$calendarCount = $this->federatedCalendarMapper->countAll();
+
+		$progress = new ProgressBar($output, $calendarCount);
 		$progress->start();
 
+		$calendars = $this->federatedCalendarMapper->findAll();
+		foreach ($calendars as $calendar) {
+			try {
+				$this->syncService->syncOne($calendar);
+			} catch (\Exception $e) {
+				$url = $calendar->getUri();
+				$msg = $e->getMessage();
+				$output->writeln('<error>Failed to sync calendar $url: $msg</error>');
+			}
 
-		$trustedServer = $this->findTrustedServer('fed1');
-		if (!$trustedServer) {
-			return 1;
+			$progress->advance();
 		}
-
-		$endPoints = $this->ocsDiscoveryService->discover($trustedServer['url'], 'FEDERATED_SHARING', true);
-		var_dump($endPoints);
-
-		$this->syncService->syncCalendar(
-			'remote.php/dav/calendars/admin/fedtest/',
-			'principals/users/admin',
-			$trustedServer,
-		);
 
 		$progress->finish();
 		$output->writeln('');
