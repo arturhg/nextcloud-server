@@ -141,9 +141,9 @@ abstract class Backend {
 				'commonName' => isset($p['{DAV:}displayname']) ? (string)$p['{DAV:}displayname'] : '',
 				'status' => 1,
 				'readOnly' => (int)$row['access'] === Backend::ACCESS_READ,
-				'token' => isset($row['token']) ? $row['token'] : '',
 				'{http://owncloud.org/ns}principal' => (string)$row['principaluri'],
-				'{http://owncloud.org/ns}group-share' => isset($p['uri']) && (str_starts_with($p['uri'], 'principals/groups') || str_starts_with($p['uri'], 'principals/circles'))
+				'{http://owncloud.org/ns}group-share' => isset($p['uri']) && (str_starts_with($p['uri'], 'principals/groups') || str_starts_with($p['uri'], 'principals/circles')),
+				'{http://nextcloud.com/ns}token' => $row['token'] ?? '',
 			];
 		}
 		$this->shareCache->set((string)$resourceId, $shares);
@@ -248,5 +248,9 @@ abstract class Backend {
 		);
 
 		return count(array_intersect($memberships, $shares)) > 0;
+	}
+
+	public function getSharesByShareePrincipal(string $principal): array {
+		return $this->service->getSharesByPrincipals([$principal]);
 	}
 }

@@ -199,6 +199,9 @@ class Calendar extends \Sabre\CalDAV\Calendar implements IRestorable, IShareable
 			parent::getOwner(),
 			'principals/system/public'
 		];
+
+		//
+
 		/** @var list<array{privilege: string, principal: string, protected: bool}> $acl */
 		$acl = array_filter($acl, function (array $rule) use ($allowedPrincipals): bool {
 			return \in_array($rule['principal'], $allowedPrincipals, true);

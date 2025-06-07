@@ -29,7 +29,7 @@ class RemoteUserPrincipalBackend implements BackendInterface {
 	}
 
 	public function getPrincipalByPath($path) {
-		if (!str_starts_with($path, self::PRINCIPAL_PREFIX)) {
+		if (!str_starts_with($path, self::PRINCIPAL_PREFIX . '/')) {
 			return null;
 		}
 

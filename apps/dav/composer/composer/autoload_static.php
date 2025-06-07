@@ -104,6 +104,8 @@ class ComposerStaticInitDAV
         'OCA\\DAV\\CalDAV\\Outbox' => __DIR__ . '/..' . '/../lib/CalDAV/Outbox.php',
         'OCA\\DAV\\CalDAV\\Plugin' => __DIR__ . '/..' . '/../lib/CalDAV/Plugin.php',
         'OCA\\DAV\\CalDAV\\Principal\\Collection' => __DIR__ . '/..' . '/../lib/CalDAV/Principal/Collection.php',
+        'OCA\\DAV\\CalDAV\\Principal\\RemoteUser' => __DIR__ . '/..' . '/../lib/CalDAV/Principal/RemoteUser.php',
+        'OCA\\DAV\\CalDAV\\Principal\\RemoteUserCollection' => __DIR__ . '/..' . '/../lib/CalDAV/Principal/RemoteUserCollection.php',
         'OCA\\DAV\\CalDAV\\Principal\\User' => __DIR__ . '/..' . '/../lib/CalDAV/Principal/User.php',
         'OCA\\DAV\\CalDAV\\Proxy\\Proxy' => __DIR__ . '/..' . '/../lib/CalDAV/Proxy/Proxy.php',
         'OCA\\DAV\\CalDAV\\Proxy\\ProxyMapper' => __DIR__ . '/..' . '/../lib/CalDAV/Proxy/ProxyMapper.php',

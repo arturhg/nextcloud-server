@@ -34,11 +34,12 @@ abstract class ASyncService {
 		$client = $this->clientService->newClient();
 
 		$options = [
-			'auth' => [$userName, $sharedSecret],
+			'auth' => ['', $sharedSecret],
 			'body' => $this->buildSyncCollectionRequestBody($syncToken),
 			// TODO: remove xdebug cookie
 			'headers' => ['Content-Type' => 'application/xml', 'Cookie' => 'XDEBUG_SESSION=XDEBUG_ECLIPSE'],
-			'timeout' => $this->config->getSystemValueInt('caldav_sync_request_timeout', IClient::DEFAULT_REQUEST_TIMEOUT)
+			'timeout' => $this->config->getSystemValueInt('caldav_sync_request_timeout', IClient::DEFAULT_REQUEST_TIMEOUT),
+			'verify' => !$this->config->getSystemValue('sharing.federation.allowSelfSignedCertificates', false),
 		];
 
 		$response = $client->request(
@@ -89,7 +90,8 @@ abstract class ASyncService {
 		$uri = $this->prepareUri($url, $resourcePath);
 
 		$options = [
-			'auth' => [$userName, $sharedSecret],
+			'auth' => ['', $sharedSecret],
+			'verify' => !$this->config->getSystemValue('sharing.federation.allowSelfSignedCertificates', false),
 		];
 
 		$response = $client->get(

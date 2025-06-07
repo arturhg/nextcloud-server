@@ -7,6 +7,7 @@
  */
 namespace OCA\DAV\CalDAV;
 
+use OCA\DAV\CalDAV\Federation\RemoteUserCalendarHome;
 use Psr\Log\LoggerInterface;
 use Sabre\CalDAV\Backend;
 use Sabre\DAVACL\PrincipalBackend;
@@ -24,6 +25,13 @@ class CalendarRoot extends \Sabre\CalDAV\CalendarRoot {
 	}
 
 	public function getChildForPrincipal(array $principal) {
+		if (str_starts_with($principal['uri'], 'principals/remote-users/')) {
+			return new RemoteUserCalendarHome(
+				$this->caldavBackend,
+				$principal,
+			);
+		}
+
 		return new CalendarHome(
 			$this->caldavBackend,
 			$principal,

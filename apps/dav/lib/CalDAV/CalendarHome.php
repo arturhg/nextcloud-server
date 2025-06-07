@@ -250,4 +250,17 @@ class CalendarHome extends \Sabre\CalDAV\CalendarHome {
 		$principalUri = $this->principalInfo['uri'];
 		return $this->caldavBackend->calendarSearch($principalUri, $filters, $limit, $offset);
 	}
+
+	public function getACL() {
+		$acl = parent::getACL();
+
+		// TODO: hackity hack
+		$acl[] = [
+			'privilege' => '{DAV:}read',
+			'principal' => 'principals/remote-users/YWRtaW5AZmVkMS5uY2Rldi45ZTA0NC5uZXQ=/Y2FsZW5kYXJzL2FkbWluL2ZlZHRlc3Q=',
+			'protected' => true,
+		];
+
+		return $acl;
+	}
 }

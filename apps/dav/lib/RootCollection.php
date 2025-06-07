@@ -12,6 +12,7 @@ use OCA\DAV\AppInfo\PluginManager;
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\DAV\CalDAV\CalendarRoot;
 use OCA\DAV\CalDAV\Principal\Collection;
+use OCA\DAV\CalDAV\Principal\RemoteUserCollection;
 use OCA\DAV\CalDAV\Proxy\ProxyMapper;
 use OCA\DAV\CalDAV\PublicCalendarRoot;
 use OCA\DAV\CalDAV\ResourceBooking\ResourcePrincipalBackend;
@@ -90,7 +91,7 @@ class RootCollection extends SimpleCollection {
 		$systemPrincipals->disableListing = $disableListing;
 		$calendarResourcePrincipals = new Collection($calendarResourcePrincipalBackend, 'principals/calendar-resources');
 		$calendarRoomPrincipals = new Collection($calendarRoomPrincipalBackend, 'principals/calendar-rooms');
-		$remoteUserPrincipals = new Collection($remoteUserPrincipalBackend, RemoteUserPrincipalBackend::PRINCIPAL_PREFIX);
+		$remoteUserPrincipals = new RemoteUserCollection($remoteUserPrincipalBackend, RemoteUserPrincipalBackend::PRINCIPAL_PREFIX);
 		$calendarSharingBackend = Server::get(Backend::class);
 
 		$filesCollection = new Files\RootCollection($userPrincipalBackend, 'principals/users');

@@ -147,4 +147,18 @@ class SharingMapper {
 			->andWhere($query->expr()->eq('access', $query->createNamedParameter(Backend::ACCESS_UNSHARED, IQueryBuilder::PARAM_INT)))
 			->executeStatement();
 	}
+
+	public function getRemoteUserPrincipalUris(string $resourceType): array {
+		$query = $this->db->getQueryBuilder();
+		$result = $query->selectDistinct('principaluri')
+			->from('dav_shares')
+			->where($query->expr()->like('principaluri', $query->createNamedParameter('principals/remote-users/%')))
+			->andWhere($query->expr()->eq('type', $query->createNamedParameter($resourceType)))
+			->executeQuery();
+
+		$rows = $result->fetchAll();
+		$result->closeCursor();
+
+		return $rows;
+	}
 }

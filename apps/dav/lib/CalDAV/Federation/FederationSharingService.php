@@ -15,7 +15,6 @@ use OCA\DAV\DAV\Sharing\SharingMapper;
 use OCP\AppFramework\Http;
 use OCP\Federation\ICloudFederationFactory;
 use OCP\Federation\ICloudFederationProviderManager;
-use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\OCM\Exceptions\OCMProviderException;
@@ -23,6 +22,7 @@ use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 use Sabre\CalDAV\Calendar;
 
+// TODO: needs to be abstract like the addressbook/calendar sharing service
 class FederationSharingService {
 	public function __construct(
 		private readonly ICloudFederationProviderManager $federationManager,
@@ -47,7 +47,7 @@ class FederationSharingService {
 	public function shareWith(IShareable $shareable, string $principal, int $access): void {
 		$shareWith = $this->decodeRemoteUserPrincipal($principal);
 		if (!$shareWith) {
-			throw new \Exception('Principal is not belonging to a remote user');
+			throw new \Exception('Principal of sharee is not belonging to a remote user');
 		}
 
 		[,, $ownerUid] = explode('/', $shareable->getOwner());
@@ -83,7 +83,8 @@ class FederationSharingService {
 			CalendarFederationProvider::CALENDAR_RESOURCE,
 		);
 
-		$calendarUrl = $this->url->linkTo('', 'remote.php') . "/dav/calendars/$ownerUid/" . $calendar->getName();
+		$relativeCalendarUrl = "calendars/$ownerUid/" . $calendar->getName();
+		$calendarUrl = $this->url->linkTo('', 'remote.php') . "/dav/$relativeCalendarUrl";
 		$calendarUrl = $this->url->getAbsoluteURL($calendarUrl);
 		$protocol = new CalendarFederationProtocolV1();
 		$protocol->setUrl($calendarUrl);
@@ -114,7 +115,15 @@ class FederationSharingService {
 		}
 
 		// 2. Create a local DAV share to track the auth token
+		$scope = base64_encode($relativeCalendarUrl);
+		$principal = "$principal/$scope";
 		$this->sharingMapper->deleteShare($shareable->getResourceId(), 'calendar', $principal);
-		$this->sharingMapper->shareWithToken($shareable->getResourceId(), 'calendar', $access, $principal, $token);
+		$this->sharingMapper->shareWithToken(
+			$shareable->getResourceId(),
+			'calendar',
+			$access,
+			$principal,
+			$token,
+		);
 	}
 }

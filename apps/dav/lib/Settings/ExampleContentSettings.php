@@ -25,7 +25,7 @@ class ExampleContentSettings implements ISettings {
 	}
 
 	public function getForm(): TemplateResponse {
-		$enableDefaultContact = $this->config->getAppValue(Application::APP_ID, 'enableDefaultContact', 'no');
+		$enableDefaultContact = $this->config->getAppValue(Application::APP_ID, 'enableDefaultContact', 'yes');
 		$this->initialState->provideInitialState('enableDefaultContact', $enableDefaultContact);
 		return new TemplateResponse(Application::APP_ID, 'settings-example-content');
 	}

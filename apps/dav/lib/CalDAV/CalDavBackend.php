@@ -3236,6 +3236,10 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 		return $this->calendarSharingBackend->getShares($resourceId);
 	}
 
+	public function getSharesByShareePrincipal(string $principal): array {
+		return $this->calendarSharingBackend->getSharesByShareePrincipal($principal);
+	}
+
 	public function preloadShares(array $resourceIds): void {
 		$this->calendarSharingBackend->preloadShares($resourceIds);
 	}
@@ -3301,6 +3305,21 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 	public function applyShareAcl(int $resourceId, array $acl): array {
 		$shares = $this->calendarSharingBackend->getShares($resourceId);
 		return $this->calendarSharingBackend->applyShareAcl($shares, $acl);
+	}
+
+	/**
+	 * @return string[]
+	 */
+	public function getRemoteUserPrincipalsWithAccess(int $resourceId): array {
+		/*
+		$shares = $this->calendarSharingBackend->getShares($resourceId);
+		return array_map(static function (array $share): string {
+			$token = $share['{http://nextcloud.com/ns}token'];
+			if ($token)
+		}, $shares);
+		*/
+
+		return [];
 	}
 
 	/**

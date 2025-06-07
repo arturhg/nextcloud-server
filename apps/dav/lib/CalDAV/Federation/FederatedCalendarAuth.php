@@ -9,90 +9,78 @@ declare(strict_types=1);
 
 namespace OCA\DAV\CalDAV\Federation;
 
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Defaults;
-use OCP\Federation\ICloudIdManager;
 use OCP\IDBConnection;
-use OCP\IURLGenerator;
 use Sabre\DAV\Auth\Backend\BackendInterface;
 use Sabre\HTTP\Auth\Basic as BasicAuth;
 use Sabre\HTTP\RequestInterface;
 use Sabre\HTTP\ResponseInterface;
 
-class FederatedCalendarAuth implements BackendInterface {
-	public function __construct(
-		private readonly IURLGenerator $url,
-		private readonly IDBConnection $db,
-		private readonly ICloudIdManager $cloudIdManager,
-	) {
-		//$this->principalPrefix = 'principals/system/';
-		$this->principalPrefix = 'principals/users/';
+final class FederatedCalendarAuth implements BackendInterface {
+	private readonly string $realm;
 
+	public function __construct(
+		private readonly IDBConnection $db,
+	) {
 		$defaults = new Defaults();
 		$this->realm = $defaults->getName();
 	}
 
-	private function validateUserPassForPath(string $path, string $username, string $password): array {
+	/**
+	 * @return string|null A principal uri if the credentials are valid and null otherwise.
+	 */
+	private function validateUserPass(string $username, string $password): ?string {
 		/*
-		if ($username !== 'system') {
-			return false;
-		}
-		*/
-
 		if (!$this->cloudIdManager->isValidCloudId($username)) {
-			return [false, ''];
+			return null;
 		}
 
 		$username = base64_encode($username);
 		$principalUri = "principals/remote-users/$username";
-
-		/*
-		if (!str_starts_with($path, $this->url->getWebroot())) {
-			return false;
-		}
-
-		$path = substr($path, strlen($this->url->getWebroot()));
-		$path = ltrim($path, '/');
 		*/
 
-		// path: calendars/<uid>/<calendar-uri>
-		[$collection, $userId, $calendarUri] = explode('/', $path);
-		if ($collection !== 'calendars') {
-			return [false, 'Invalid collection'];
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from('dav_shares')
+			->where($qb->expr()->eq(
+				'type',
+				$qb->createNamedParameter('calendar', IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR),
+			)
+			->andWhere($qb->expr()->eq(
+				'token',
+				$qb->createNamedParameter($password, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR),
+			);
+		$result = $qb->executeQuery();
+		$rows = $result->fetchAll();
+		$result->closeCursor();
+
+		if (count($rows) > 1) {
+			// Should not happen but just to be sure
+			return null;
 		}
 
-		// FIXME: hackity hack
-		$qb = $this->db->getQueryBuilder();
-		$qb->select($qb->func()->count('*'))
-			->from('dav_shares')
-			->where($qb->expr()->eq('principaluri', $qb->createNamedParameter($principalUri)))
-			->andWhere($qb->expr()->eq('type', $qb->createNamedParameter('calendar')))
-			->andWhere($qb->expr()->eq('token', $qb->createNamedParameter($password)));
-			//->andWhere($qb->expr()->eq('publicuri', $qb->createNamedParameter($password)));
-		$result = $qb->executeQuery();
-		$count = (int)$result->fetchOne();
-		$result->closeCursor();
-		//return $count > 0;
-		//return [$count > 0, $userId];
-		return [$count > 0, 'admin'];
+		return (string)$rows[0]['principaluri'];
 	}
 
-	public function check(RequestInterface $request, ResponseInterface $response) {
+	public function check(RequestInterface $request, ResponseInterface $response): array {
 		$auth = new BasicAuth($this->realm, $request, $response);
 
 		$userpass = $auth->getCredentials();
 		if (!$userpass) {
 			return [false, "No 'Authorization: Basic' header found. Either the client didn't send one, or the server is misconfigured"];
 		}
-		[$valid, $userId] = $this->validateUserPassForPath($request->getPath(), $userpass[0], $userpass[1]);
-		if (!$valid) {
+		$principal = $this->validateUserPass($userpass[0], $userpass[1]);
+		if ($principal === null) {
 			return [false, 'Username or password was incorrect'];
 		}
 
-		//return [true, $this->principalPrefix.$userpass[0]];
-		return [true, $this->principalPrefix.$userId];
+		return [true, $principal];
 	}
 
-	public function challenge(RequestInterface $request, ResponseInterface $response) {
-		// TODO: Implement challenge() method.
+	public function challenge(RequestInterface $request, ResponseInterface $response): void {
+		// No special challenge is needed here
 	}
 }
