@@ -99,6 +99,11 @@ class PrimaryObjectStoreConfig {
 		return $objectStore || $objectStoreMultiBucket;
 	}
 
+	public function hasMultipleObjectStorages(): bool {
+		$objectStore = $this->config->getSystemValue('objectstore', []);
+		return isset($objectStore['default']);
+	}
+
 	/**
 	 * @return ?array<string, ObjectStoreConfig|string>
 	 */
@@ -204,11 +209,15 @@ class PrimaryObjectStoreConfig {
 	}
 
 	public function getObjectStoreForUser(IUser $user): string {
-		$value = $this->config->getUserValue($user->getUID(), 'homeobjectstore', 'objectstore', null);
-		if ($value === null) {
-			$value = $this->resolveAlias('default');
-			$this->config->setUserValue($user->getUID(), 'homeobjectstore', 'objectstore', $value);
+		if ($this->hasMultipleObjectStorages()) {
+			$value = $this->config->getUserValue($user->getUID(), 'homeobjectstore', 'objectstore', null);
+			if ($value === null) {
+				$value = $this->resolveAlias('default');
+				$this->config->setUserValue($user->getUID(), 'homeobjectstore', 'objectstore', $value);
+			}
+			return $value;
+		} else {
+			return 'default';
 		}
-		return $value;
 	}
 }
