@@ -148,6 +148,20 @@ class SharingMapper {
 			->executeStatement();
 	}
 
+	public function hasRemoteUserPrincipalUri(string $resourceType, string $principalUri): bool {
+		$query = $this->db->getQueryBuilder();
+		$result = $query->selectDistinct($query->func()->count('*'))
+			->from('dav_shares')
+			->where($query->expr()->eq('principaluri', $query->createNamedParameter($principalUri, IQueryBuilder::PARAM_STR), IQueryBuilder::PARAM_STR))
+			->andWhere($query->expr()->eq('type', $query->createNamedParameter($resourceType, IQueryBuilder::PARAM_STR), IQueryBuilder::PARAM_STR))
+			->executeQuery();
+
+		$count = (int)$result->fetchOne();
+		$result->closeCursor();
+
+		return $count > 0;
+	}
+
 	public function getRemoteUserPrincipalUris(string $resourceType): array {
 		$query = $this->db->getQueryBuilder();
 		$result = $query->selectDistinct('principaluri')
