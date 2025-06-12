@@ -91,7 +91,7 @@ class RootCollection extends SimpleCollection {
 		$systemPrincipals->disableListing = $disableListing;
 		$calendarResourcePrincipals = new Collection($calendarResourcePrincipalBackend, 'principals/calendar-resources');
 		$calendarRoomPrincipals = new Collection($calendarRoomPrincipalBackend, 'principals/calendar-rooms');
-		$remoteUserPrincipals = new RemoteUserCollection($remoteUserPrincipalBackend);
+		$remoteUserPrincipals = new Collection($remoteUserPrincipalBackend, 'principals/remote-users');
 		$calendarSharingBackend = Server::get(Backend::class);
 
 		$filesCollection = new Files\RootCollection($userPrincipalBackend, 'principals/users');
