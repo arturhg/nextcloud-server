@@ -13,10 +13,14 @@ use OCA\DAV\DAV\RemoteUserPrincipalBackend;
 use OCA\DAV\DAV\Sharing\SharingMapper;
 use OCP\Server;
 use Sabre\DAV\SimpleCollection;
-use Sabre\DAVACL\PrincipalCollection;
 
 class RemoteUserCollection extends SimpleCollection {
 	private readonly SharingMapper $sharingMapper;
+
+	/*
+	private array $cachedChildren = [];
+	private bool $hasCachedAll;
+	*/
 
 	public function __construct(
 		private readonly RemoteUserPrincipalBackend $principalBackend,
@@ -30,31 +34,33 @@ class RemoteUserCollection extends SimpleCollection {
 	}
 
 	private function loadChildren(): array {
-		// TODO: do we need the resource type here?
+		// TODO: do we need the resource type here as an argument?
 		$rows = $this->sharingMapper->getRemoteUserPrincipalUris('calendar');
 
-		$childrenByCloudId = [];
-
+		$children = [];
 		foreach ($rows as $row) {
 			$principalUri = $row['principaluri'];
-			[,, $encodedCloudId, $encodedScope] = explode('/', $principalUri);
-			if (!isset($childrenByCloudId[$encodedCloudId])) {
-				//$byCloudId[$encodedCloudId] = [];
-				$childrenByCloudId[$encodedCloudId] = new SimpleCollection($encodedCloudId, []);
-				/*
-				$childrenByCloudId[$encodedCloudId] = new PrincipalCollection(
-					$this->principalBackend,
-				);
-				*/
-			}
 
-			$childrenByCloudId[$encodedCloudId]->addChild(new RemoteUser($this->principalBackend, [
+			[,, $encodedPrincipal] = explode('/', $principalUri);
+			[$cloudId, $scope] = explode('|', base64_decode($encodedPrincipal));
+
+			$children[] = new RemoteUser($this->principalBackend, [
 				'uri' => $principalUri,
-				'{http://nextcloud.com/ns}cloud-id' => base64_decode($encodedCloudId),
-				'{http://nextcloud.com/ns}scope' => base64_decode($encodedScope),
-			]));
+				'{http://nextcloud.com/ns}cloud-id' => $cloudId,
+				'{http://nextcloud.com/ns}scope' => $scope,
+			]);
 		}
 
-		return array_values($childrenByCloudId);
+		return $children;
+	}
+
+	public function getChild($name) {
+		$child = parent::getChild($name);
+		return $child;
+	}
+
+	public function getChildren() {
+		$children = parent::getChildren();
+		return $children;
 	}
 }

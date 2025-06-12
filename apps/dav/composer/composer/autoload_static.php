@@ -95,6 +95,7 @@ class ComposerStaticInitDAV
         'OCA\\DAV\\CalDAV\\Federation\\Protocol\\CalendarFederationProtocolV1' => __DIR__ . '/..' . '/../lib/CalDAV/Federation/Protocol/CalendarFederationProtocolV1.php',
         'OCA\\DAV\\CalDAV\\Federation\\Protocol\\CalendarProtocolParseException' => __DIR__ . '/..' . '/../lib/CalDAV/Federation/Protocol/CalendarProtocolParseException.php',
         'OCA\\DAV\\CalDAV\\Federation\\Protocol\\ICalendarFederationProtocol' => __DIR__ . '/..' . '/../lib/CalDAV/Federation/Protocol/ICalendarFederationProtocol.php',
+        'OCA\\DAV\\CalDAV\\Federation\\RemoteUserCalendarHome' => __DIR__ . '/..' . '/../lib/CalDAV/Federation/RemoteUserCalendarHome.php',
         'OCA\\DAV\\CalDAV\\FreeBusy\\FreeBusyGenerator' => __DIR__ . '/..' . '/../lib/CalDAV/FreeBusy/FreeBusyGenerator.php',
         'OCA\\DAV\\CalDAV\\ICSExportPlugin\\ICSExportPlugin' => __DIR__ . '/..' . '/../lib/CalDAV/ICSExportPlugin/ICSExportPlugin.php',
         'OCA\\DAV\\CalDAV\\IRestorable' => __DIR__ . '/..' . '/../lib/CalDAV/IRestorable.php',

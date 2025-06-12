@@ -33,9 +33,10 @@ class RemoteUserPrincipalBackend implements BackendInterface {
 			return null;
 		}
 
-		[,, $encodedCloudId] = explode('/', $path);
+		[,, $encodedPrincipal] = explode('/', $path);
+		[$encodedCloudId, $scope] = explode('|', base64_decode($encodedPrincipal));
 		try {
-			$cloudId = $this->cloudIdManager->resolveCloudId(base64_decode($encodedCloudId));
+			$cloudId = $this->cloudIdManager->resolveCloudId($encodedCloudId);
 		} catch (\InvalidArgumentException $e) {
 			return null;
 		}
@@ -43,6 +44,7 @@ class RemoteUserPrincipalBackend implements BackendInterface {
 		return [
 			'uri' => $path,
 			'{DAV:}displayname' => $cloudId->getDisplayId(),
+			'{http://nextcloud.com/ns}scope' => $scope,
 			//'{http://nextcloud.com/ns}federated-by' => $cloudId->getId(),
 		];
 	}

@@ -91,7 +91,7 @@ class RootCollection extends SimpleCollection {
 		$systemPrincipals->disableListing = $disableListing;
 		$calendarResourcePrincipals = new Collection($calendarResourcePrincipalBackend, 'principals/calendar-resources');
 		$calendarRoomPrincipals = new Collection($calendarRoomPrincipalBackend, 'principals/calendar-rooms');
-		$remoteUserPrincipals = new RemoteUserCollection($remoteUserPrincipalBackend, RemoteUserPrincipalBackend::PRINCIPAL_PREFIX);
+		$remoteUserPrincipals = new RemoteUserCollection($remoteUserPrincipalBackend);
 		$calendarSharingBackend = Server::get(Backend::class);
 
 		$filesCollection = new Files\RootCollection($userPrincipalBackend, 'principals/users');
@@ -109,6 +109,9 @@ class RootCollection extends SimpleCollection {
 		);
 		$userCalendarRoot = new CalendarRoot($userPrincipalBackend, $caldavBackend, 'principals/users', $logger);
 		$userCalendarRoot->disableListing = $disableListing;
+
+		$remoteUserCalendarRoot = new CalendarRoot($remoteUserPrincipalBackend, $caldavBackend, 'principals/remote-users', $logger);
+		$remoteUserCalendarRoot->disableListing = $disableListing;
 
 		$resourceCalendarRoot = new CalendarRoot($calendarResourcePrincipalBackend, $caldavBackend, 'principals/calendar-resources', $logger);
 		$resourceCalendarRoot->disableListing = $disableListing;
@@ -184,6 +187,7 @@ class RootCollection extends SimpleCollection {
 				$remoteUserPrincipals]),
 			$filesCollection,
 			$userCalendarRoot,
+			$remoteUserCalendarRoot,
 			new SimpleCollection('system-calendars', [
 				$resourceCalendarRoot,
 				$roomCalendarRoot,

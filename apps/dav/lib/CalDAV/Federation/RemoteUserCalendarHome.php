@@ -10,10 +10,12 @@ declare(strict_types=1);
 namespace OCA\DAV\CalDAV\Federation;
 
 use MicrosoftAzure\Storage\Common\Logger;
+use OCA\DAV\AppInfo\Application;
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\DAV\CalDAV\Calendar;
 use OCP\IConfig;
 use OCP\IL10N;
+use OCP\L10N\IFactory as IL10NFactory;
 use OCP\Server;
 use Psr\Log\LoggerInterface;
 use Sabre\CalDAV\Backend;
@@ -31,7 +33,7 @@ class RemoteUserCalendarHome extends CalendarHome {
 		parent::__construct($caldavBackend, $principalInfo);
 
 		//$this->calDavBackend = $caldavBackend;
-		$this->l10n = Server::get(IL10N::class);
+		$this->l10n = Server::get(IL10NFactory::class)->get(Application::APP_ID);
 		$this->config = Server::get(IConfig::class);
 		$this->logger = Server::get(LoggerInterface::class);
 	}
@@ -62,6 +64,8 @@ class RemoteUserCalendarHome extends CalendarHome {
 			}
 
 			$calendar = $this->caldavBackend->getCalendarById($share['resourceid']);
+			$calendar['{' . \OCA\DAV\DAV\Sharing\Plugin::NS_OWNCLOUD . '}read-only'] = 1; // TODO: do not force read-only here
+			$calendar['{' . \OCA\DAV\DAV\Sharing\Plugin::NS_OWNCLOUD . '}owner-principal'] = $this->principalInfo['uri'];
 			$children[] = new Calendar(
 				$this->caldavBackend,
 				$calendar,

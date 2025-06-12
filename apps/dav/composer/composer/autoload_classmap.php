@@ -80,6 +80,7 @@ return array(
     'OCA\\DAV\\CalDAV\\Federation\\Protocol\\CalendarFederationProtocolV1' => $baseDir . '/../lib/CalDAV/Federation/Protocol/CalendarFederationProtocolV1.php',
     'OCA\\DAV\\CalDAV\\Federation\\Protocol\\CalendarProtocolParseException' => $baseDir . '/../lib/CalDAV/Federation/Protocol/CalendarProtocolParseException.php',
     'OCA\\DAV\\CalDAV\\Federation\\Protocol\\ICalendarFederationProtocol' => $baseDir . '/../lib/CalDAV/Federation/Protocol/ICalendarFederationProtocol.php',
+    'OCA\\DAV\\CalDAV\\Federation\\RemoteUserCalendarHome' => $baseDir . '/../lib/CalDAV/Federation/RemoteUserCalendarHome.php',
     'OCA\\DAV\\CalDAV\\FreeBusy\\FreeBusyGenerator' => $baseDir . '/../lib/CalDAV/FreeBusy/FreeBusyGenerator.php',
     'OCA\\DAV\\CalDAV\\ICSExportPlugin\\ICSExportPlugin' => $baseDir . '/../lib/CalDAV/ICSExportPlugin/ICSExportPlugin.php',
     'OCA\\DAV\\CalDAV\\IRestorable' => $baseDir . '/../lib/CalDAV/IRestorable.php',

@@ -48,6 +48,10 @@ class CalendarRoot extends \Sabre\CalDAV\CalendarRoot {
 			return $parts[1];
 		}
 
+		if ($this->principalPrefix === 'principals/remote-users') {
+			return 'federated-calendars';
+		}
+
 		return parent::getName();
 	}
 
