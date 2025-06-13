@@ -16,11 +16,13 @@ class CalendarFederationProtocolV1 implements ICalendarFederationProtocol {
 	public const PROP_DISPLAY_NAME = 'displayName';
 	public const PROP_COLOR = 'color';
 	public const PROP_ACCESS = 'access';
+	public const PROP_COMPONENTS = 'components';
 
 	private string $url = '';
 	private string $displayName = '';
 	private ?string $color = null;
 	private int $access = 0;
+	private string $components = '';
 
 	/**
 	 * @throws CalendarProtocolParseException If parsing the raw protocol array fails.
@@ -45,9 +47,15 @@ class CalendarFederationProtocolV1 implements ICalendarFederationProtocol {
 			throw new CalendarProtocolParseException('Color is set but not a string');
 		}
 
+		// TODO: remove access until we have read-write support?
 		$access = $rawProtocol[self::PROP_ACCESS] ?? null;
 		if (!is_int($access)) {
 			throw new CalendarProtocolParseException('Access is missing or not an integer');
+		}
+
+		$components = $rawProtocol[self::PROP_COMPONENTS] ?? null;
+		if (!is_string($components)) {
+			throw new CalendarProtocolParseException('Supported calendar components are missing or not a string');
 		}
 
 		$protocol = new self();
@@ -55,6 +63,7 @@ class CalendarFederationProtocolV1 implements ICalendarFederationProtocol {
 		$protocol->setDisplayName($displayName);
 		$protocol->setColor($color);
 		$protocol->setAccess($access);
+		$protocol->setComponents($components);
 		return $protocol;
 	}
 
@@ -66,6 +75,7 @@ class CalendarFederationProtocolV1 implements ICalendarFederationProtocol {
 			self::PROP_DISPLAY_NAME => $this->getDisplayName(),
 			self::PROP_COLOR => $this->getColor(),
 			self::PROP_ACCESS => $this->getAccess(),
+			self::PROP_COMPONENTS => $this->getComponents(),
 		];
 	}
 
@@ -104,6 +114,14 @@ class CalendarFederationProtocolV1 implements ICalendarFederationProtocol {
 
 	public function setAccess(int $access): void {
 		$this->access = $access;
+	}
+
+	public function getComponents(): string {
+		return $this->components;
+	}
+
+	public function setComponents(string $components): void {
+		$this->components = $components;
 	}
 }
 

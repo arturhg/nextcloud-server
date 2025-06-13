@@ -7,6 +7,7 @@ declare(strict_types=1);
  */
 namespace OCA\DAV\DAV\Sharing;
 
+use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
@@ -148,12 +149,23 @@ class SharingMapper {
 			->executeStatement();
 	}
 
-	public function hasRemoteUserPrincipalUri(string $resourceType, string $principalUri): bool {
+	/**
+	 * @throws \OCP\DB\Exception
+	 */
+	public function hasShareWithPrincipalUri(string $resourceType, string $principalUri): bool {
 		$query = $this->db->getQueryBuilder();
 		$result = $query->selectDistinct($query->func()->count('*'))
 			->from('dav_shares')
-			->where($query->expr()->eq('principaluri', $query->createNamedParameter($principalUri, IQueryBuilder::PARAM_STR), IQueryBuilder::PARAM_STR))
-			->andWhere($query->expr()->eq('type', $query->createNamedParameter($resourceType, IQueryBuilder::PARAM_STR), IQueryBuilder::PARAM_STR))
+			->where($query->expr()->eq(
+				'principaluri',
+				$query->createNamedParameter($principalUri, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			))
+			->andWhere($query->expr()->eq(
+				'type',
+				$query->createNamedParameter($resourceType, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			))
 			->executeQuery();
 
 		$count = (int)$result->fetchOne();
@@ -162,12 +174,24 @@ class SharingMapper {
 		return $count > 0;
 	}
 
-	public function getRemoteUserPrincipalUris(string $resourceType): array {
+	/**
+	 * @return array{principaluri: string}[]
+	 * @throws \OCP\DB\Exception
+	 */
+	public function getPrincipalUrisByPrefix(string $resourceType, string $prefix): array {
 		$query = $this->db->getQueryBuilder();
 		$result = $query->selectDistinct('principaluri')
 			->from('dav_shares')
-			->where($query->expr()->like('principaluri', $query->createNamedParameter('principals/remote-users/%')))
-			->andWhere($query->expr()->eq('type', $query->createNamedParameter($resourceType)))
+			->where($query->expr()->like(
+				'principaluri',
+				$query->createNamedParameter("$prefix/%", IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			))
+			->andWhere($query->expr()->eq(
+				'type',
+				$query->createNamedParameter($resourceType, IQueryBuilder::PARAM_STR)),
+				IQueryBuilder::PARAM_STR,
+			)
 			->executeQuery();
 
 		$rows = $result->fetchAll();

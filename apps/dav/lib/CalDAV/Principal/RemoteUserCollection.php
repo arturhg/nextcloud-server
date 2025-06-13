@@ -11,13 +11,10 @@ namespace OCA\DAV\CalDAV\Principal;
 
 use OCA\DAV\DAV\RemoteUserPrincipalBackend;
 use OCA\DAV\DAV\Sharing\SharingMapper;
-use OCP\Server;
 use Sabre\DAV\Exception\NotFound;
-//use Sabre\DAV\SimpleCollection;
 
 class RemoteUserCollection extends \Sabre\DAV\Collection {
-	private readonly SharingMapper $sharingMapper;
-	private bool $hasCachedAllChildren;
+	private bool $hasCachedAllChildren = false;
 
 	/** @var RemoteUser[] */
 	private array $children = [];
@@ -27,12 +24,8 @@ class RemoteUserCollection extends \Sabre\DAV\Collection {
 
 	public function __construct(
 		private readonly RemoteUserPrincipalBackend $principalBackend,
+		private readonly SharingMapper $sharingMapper,
 	) {
-		// TODO: inject
-		$this->sharingMapper = Server::get(SharingMapper::class);
-
-		//$children = $this->loadChildren();
-		//parent::__construct('remote-users', $children);
 	}
 
 	public function getName() {
@@ -58,9 +51,7 @@ class RemoteUserCollection extends \Sabre\DAV\Collection {
 	}
 
 	private function loadChildren(): array {
-		// TODO: do we need the resource type here as an argument?
 		$rows = $this->sharingMapper->getRemoteUserPrincipalUris('calendar');
-
 		return array_map(fn (array $row) => $this->rowToRemoteUser($row['principaluri']), $rows);
 	}
 
@@ -68,8 +59,7 @@ class RemoteUserCollection extends \Sabre\DAV\Collection {
 		if (isset($this->childrenByName[$name])) {
 			$child = $this->childrenByName[$name];
 			if ($child === null) {
-				// TODO: add message
-				throw new NotFound();
+				throw new NotFound("Principal not found: $name");
 			}
 
 			return $child;
@@ -82,14 +72,19 @@ class RemoteUserCollection extends \Sabre\DAV\Collection {
 			}
 		}
 
+		// TODO: check the following claim
+		// It makes sense to load and cache only a single principal here as there are two main usage
+		// patterns: Either all principals are loaded via getChildren() (when listing) or a single,
+		// specific one is requested by path.
 		$principalUri = "principals/remote-users/$name";
-		// TODO: do we need the resource type here as an argument?
 		if ($this->sharingMapper->hasRemoteUserPrincipalUri('calendar', $principalUri)) {
 			$remoteUser = $this->rowToRemoteUser($principalUri);
 			$this->childrenByName[$name] = $remoteUser;
 			return $remoteUser;
 		}
 
+		// Skip next search
+		$this->childrenByName[$name] = null;
 		throw new NotFound();
 	}
 

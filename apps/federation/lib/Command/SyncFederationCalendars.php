@@ -30,6 +30,10 @@ class SyncFederationCalendars extends Command {
 
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$calendarCount = $this->federatedCalendarMapper->countAll();
+		if ($calendarCount === 0) {
+			$output->writeln('There are no federated calendars');
+			return 0;
+		}
 
 		$progress = new ProgressBar($output, $calendarCount);
 		$progress->start();

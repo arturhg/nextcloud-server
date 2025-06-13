@@ -11,6 +11,7 @@ namespace OCA\DAV\CalDAV\Federation;
 
 use OCP\AppFramework\Db\Entity;
 use OCP\DB\Types;
+use Sabre\CalDAV\Xml\Property\SupportedCalendarComponentSet;
 
 // TODO: write a migration for this entity
 
@@ -37,6 +38,8 @@ use OCP\DB\Types;
  * @method void setSharedBy(string $sharedBy)
  * @method string getSharedByDisplayName()
  * @method void setSharedByDisplayName(string $sharedByDisplayName)
+ * @method string getComponents()
+ * @method void setComponents(string $components)
  */
 class FederatedCalendarEntity extends Entity {
 	protected string $principaluri = '';
@@ -50,6 +53,7 @@ class FederatedCalendarEntity extends Entity {
 	protected ?int $lastSync = null;
 	protected string $sharedBy = '';
 	protected string $sharedByDisplayName = '';
+	protected string $components = '';
 
 	public function __construct() {
 		$this->addType('principaluri', Types::STRING);
@@ -63,17 +67,7 @@ class FederatedCalendarEntity extends Entity {
 		$this->addType('lastSync', Types::INTEGER);
 		$this->addType('sharedBy', Types::STRING);
 		$this->addType('sharedByDisplayName', Types::STRING);
-	}
-
-	public function toFederatedCalendar(): FederatedCalendar {
-		return new FederatedCalendar(
-			$this->getId(),
-			$this->getUri(),
-			$this->getDisplayName(),
-			$this->getColor(),
-			$this->getPermissions(),
-			$this->getPrincipaluri(),
-		);
+		$this->addType('components', Types::STRING);
 	}
 
 	public function getSyncTokenForSabre(): string {
@@ -82,5 +76,27 @@ class FederatedCalendarEntity extends Entity {
 
 	public function getSharedByPrincipal(): string {
 		return 'principals/remote-users/' . base64_encode($this->getSharedBy());
+	}
+
+	public function getSupportedCalendarComponentSet(): SupportedCalendarComponentSet {
+		$components = explode(',', $this->getComponents());
+		return new SupportedCalendarComponentSet($components);
+	}
+
+	public function toCalendarInfo(): array {
+		return [
+			'id' => $this->getId(),
+			'uri' => $this->getUri(),
+			'principaluri' => $this->getPrincipaluri(),
+			//'federated' => true,
+
+			'{DAV:}displayname' => $this->getDisplayName(),
+			'{http://sabredav.org/ns}sync-token' => $this->getSyncToken(),
+			'{' . \Sabre\CalDAV\Plugin::NS_CALENDARSERVER . '}getctag' => $this->getSyncTokenForSabre(),
+			'{' . \Sabre\CalDAV\Plugin::NS_CALDAV . '}supported-calendar-component-set' => $this->getSupportedCalendarComponentSet(),
+			'{' . \OCA\DAV\DAV\Sharing\Plugin::NS_OWNCLOUD . '}owner-principal' => $this->getSharedByPrincipal(),
+			// TODO: implement read-write sharing
+			'{' . \OCA\DAV\DAV\Sharing\Plugin::NS_OWNCLOUD . '}read-only' => 1
+		];
 	}
 }

@@ -9,44 +9,62 @@ declare(strict_types=1);
 
 namespace OCA\DAV\DAV;
 
+use OCA\DAV\DAV\Sharing\SharingMapper;
 use OCP\Federation\ICloudIdManager;
-use OCP\Server;
 use Sabre\DAVACL\PrincipalBackend\BackendInterface;
 
 class RemoteUserPrincipalBackend implements BackendInterface {
 	public const PRINCIPAL_PREFIX = 'principals/remote-users';
 
-	private readonly ICloudIdManager $cloudIdManager;
+	private bool $hasCachedAllChildren = false;
 
-	public function __construct() {
-		// TODO: inject
-		$this->cloudIdManager = Server::get(ICloudIdManager::class);
+	/** @var array<string, mixed>[] */
+	private array $principals = [];
+
+	/** @var array<string, array<string, mixed>|null> */
+	private array $principalsByPath = [];
+
+	public function __construct(
+		private readonly ICloudIdManager $cloudIdManager,
+		private readonly SharingMapper $sharingMapper,
+	) {
 	}
 
 	public function getPrincipalsByPrefix($prefixPath) {
-		// We don't know about all the remote principals on all remote instances
-		return [];
+		if ($prefixPath !== self::PRINCIPAL_PREFIX) {
+			return [];
+		}
+
+		if (!$this->hasCachedAllChildren) {
+			$this->loadChildren();
+			$this->hasCachedAllChildren = true;
+		}
+
+		return $this->principals;
 	}
 
 	public function getPrincipalByPath($path) {
-		if (!str_starts_with($path, self::PRINCIPAL_PREFIX . '/')) {
+		[$prefix] = \Sabre\Uri\split($path);
+		if ($prefix !== self::PRINCIPAL_PREFIX) {
 			return null;
 		}
 
-		[,, $encodedPrincipal] = explode('/', $path);
-		[$encodedCloudId, $scope] = explode('|', base64_decode($encodedPrincipal));
-		try {
-			$cloudId = $this->cloudIdManager->resolveCloudId($encodedCloudId);
-		} catch (\InvalidArgumentException $e) {
+		if (isset($this->principalsByPath[$path])) {
+			return $this->principalsByPath[$path];
+		}
+
+		// TODO: check the following claim
+		// It makes sense to load and cache only a single principal here as there are two main usage
+		// patterns: Either all principals are loaded via getChildren() (when listing) or a single,
+		// specific one is requested by path.
+		if (!$this->sharingMapper->hasShareWithPrincipalUri('calendar', $path)) {
+			$this->principalsByPath[$path] = null;
 			return null;
 		}
 
-		return [
-			'uri' => $path,
-			'{DAV:}displayname' => $cloudId->getDisplayId(),
-			'{http://nextcloud.com/ns}scope' => $scope,
-			//'{http://nextcloud.com/ns}federated-by' => $cloudId->getId(),
-		];
+		$principal = $this->principalUriToPrincipal($path);
+		$this->principalsByPath[$path] = $principal;
+		return $principal;
 	}
 
 	public function updatePrincipal($path, \Sabre\DAV\PropPatch $propPatch) {
@@ -84,6 +102,42 @@ class RemoteUserPrincipalBackend implements BackendInterface {
 	}
 
 	public function setGroupMemberSet($principal, array $members) {
-		throw new \Sabre\DAV\Exception('Setting members of the group is not supported yet');
+		throw new \Sabre\DAV\Exception('Adding members to remote user is not supported');
+	}
+
+	/**
+	 * @psalm-return list<string, string> [$cloudId, $scope]
+	 */
+	private function decodeRemoteUserPrincipalName(string $name): array {
+		[$cloudId, $scope] = explode('|', base64_decode($name));
+		return [$cloudId, $scope];
+	}
+
+	/**
+	 * @return array<string, array>
+	 */
+	private function principalUriToPrincipal(string $principalUri): array {
+		[, $name] = \Sabre\Uri\split($principalUri);
+		[$encodedCloudId, $scope] = $this->decodeRemoteUserPrincipalName($name);
+		$cloudId = $this->cloudIdManager->resolveCloudId($encodedCloudId);
+		return [
+			'uri' => $principalUri,
+			'{DAV:}displayname' => $cloudId->getDisplayId(),
+			'{http://nextcloud.com/ns}cloud-id' => $cloudId,
+			'{http://nextcloud.com/ns}federation-scope' => $scope,
+		];
+	}
+
+	private function loadChildren(): array {
+		$rows = $this->sharingMapper->getPrincipalUrisByPrefix('calendar', self::PRINCIPAL_PREFIX);
+		$this->principals = array_map(
+			fn (array $row) => $this->principalUriToPrincipal($row['principaluri']),
+			$rows,
+		);
+
+		$this->principalsByPath = [];
+		foreach ($this->principals as $child) {
+			$this->principalsByPath[$child['uri']] = $child;
+		}
 	}
 }

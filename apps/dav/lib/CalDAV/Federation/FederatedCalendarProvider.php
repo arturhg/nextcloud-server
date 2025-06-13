@@ -23,7 +23,7 @@ class FederatedCalendarProvider implements ICalendarProvider {
 		if (!empty($calendarUris)) {
 			$calendars = array_filter(
 				$calendars,
-				static fn(FederatedCalendar $calendar) => in_array(
+				static fn(FederatedCalendarImpl $calendar) => in_array(
 					$calendar->getUri(),
 					$calendarUris,
 					true,

@@ -16,16 +16,16 @@ class FederatedCalendarService {
 	}
 
 	public function createFederatedCalendar(
-		FederatedCalendar $calendar,
-		string $principalUri,
+		FederatedCalendarImpl $calendar,
+		string                $principalUri,
 	): void {
 		$entity = $this->federatedCalendarToEntity($calendar, $principalUri);
 		$this->federatedCalendarsMapper->insert($entity);
 	}
 
 	private function federatedCalendarToEntity(
-		FederatedCalendar $calendar,
-		string $principalUri,
+		FederatedCalendarImpl $calendar,
+		string                $principalUri,
 	): FederatedCalendarEntity {
 		$entity = new FederatedCalendarEntity();
 		$entity->setPrincipalUri($principalUri);

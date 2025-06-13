@@ -84,6 +84,10 @@ class Version1034Date20250605132605 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 255,
 			]);
+			$federatedCalendarsTable->addColumn('components', Types::STRING, [
+				'notnull' => true,
+				'length' => 255,
+			]);
 			$federatedCalendarsTable->setPrimaryKey(['id']);
 		}
 

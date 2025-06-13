@@ -11,8 +11,8 @@ use OC\KnownUser\KnownUserService;
 use OCA\DAV\AppInfo\PluginManager;
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\DAV\CalDAV\CalendarRoot;
+use OCA\DAV\CalDAV\Federation\FederatedCalendarMapper;
 use OCA\DAV\CalDAV\Principal\Collection;
-use OCA\DAV\CalDAV\Principal\RemoteUserCollection;
 use OCA\DAV\CalDAV\Proxy\ProxyMapper;
 use OCA\DAV\CalDAV\PublicCalendarRoot;
 use OCA\DAV\CalDAV\ResourceBooking\ResourcePrincipalBackend;
@@ -78,7 +78,7 @@ class RootCollection extends SimpleCollection {
 		$groupPrincipalBackend = new GroupPrincipalBackend($groupManager, $userSession, $shareManager, $config);
 		$calendarResourcePrincipalBackend = new ResourcePrincipalBackend($db, $userSession, $groupManager, $logger, $proxyMapper);
 		$calendarRoomPrincipalBackend = new RoomPrincipalBackend($db, $userSession, $groupManager, $logger, $proxyMapper);
-		$remoteUserPrincipalBackend = new RemoteUserPrincipalBackend();
+		$remoteUserPrincipalBackend = Server::get(RemoteUserPrincipalBackend::class);
 		// as soon as debug mode is enabled we allow listing of principals
 		$disableListing = !$config->getSystemValue('debug', false);
 
@@ -105,6 +105,7 @@ class RootCollection extends SimpleCollection {
 			$dispatcher,
 			$config,
 			$calendarSharingBackend,
+			Server::get(FederatedCalendarMapper::class),
 			false,
 		);
 		$userCalendarRoot = new CalendarRoot($userPrincipalBackend, $caldavBackend, 'principals/users', $logger);

@@ -7,6 +7,7 @@ namespace OCA\DAV\Tests\unit\CalDAV;
 
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\DAV\CalDAV\Calendar;
+use OCA\DAV\CalDAV\Federation\FederatedCalendarMapper;
 use OCA\DAV\CalDAV\PublicCalendar;
 use OCA\DAV\CalDAV\PublicCalendarRoot;
 use OCA\DAV\Connector\Sabre\Principal;
@@ -18,6 +19,7 @@ use OCP\IL10N;
 use OCP\IUserManager;
 use OCP\Security\ISecureRandom;
 use OCP\Server;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use Test\TestCase;
 
@@ -50,6 +52,8 @@ class PublicCalendarRootTest extends TestCase {
 	/** @var LoggerInterface */
 	private $logger;
 
+	protected FederatedCalendarMapper&MockObject $federatedCalendarMapper;
+
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -59,6 +63,7 @@ class PublicCalendarRootTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->random = Server::get(ISecureRandom::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->federatedCalendarMapper = $this->createMock(FederatedCalendarMapper::class);
 		$dispatcher = $this->createMock(IEventDispatcher::class);
 		$config = $this->createMock(IConfig::class);
 		$sharingBackend = $this->createMock(\OCA\DAV\CalDAV\Sharing\Backend::class);
@@ -80,6 +85,7 @@ class PublicCalendarRootTest extends TestCase {
 			$dispatcher,
 			$config,
 			$sharingBackend,
+			$this->federatedCalendarMapper,
 			false,
 		);
 		$this->l10n = $this->getMockBuilder(IL10N::class)

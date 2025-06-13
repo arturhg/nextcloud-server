@@ -11,6 +11,8 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Generator;
 use OCA\DAV\AppInfo\Application;
+use OCA\DAV\CalDAV\Federation\FederatedCalendarEntity;
+use OCA\DAV\CalDAV\Federation\FederatedCalendarMapper;
 use OCA\DAV\CalDAV\Sharing\Backend;
 use OCA\DAV\Connector\Sabre\Principal;
 use OCA\DAV\DAV\Sharing\IShareable;
@@ -210,6 +212,7 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 		private IEventDispatcher $dispatcher,
 		private IConfig $config,
 		private Sharing\Backend $calendarSharingBackend,
+		private FederatedCalendarMapper $federatedCalendarMapper,
 		private bool $legacyEndpoint = false,
 	) {
 	}
@@ -3748,6 +3751,23 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 					[$principal]
 				));
 			}
+		}, $this->db);
+	}
+
+	public function getFederatedCalendarsForUser(string $principalUri): array {
+		return $this->atomic(function () use ($principalUri) {
+			$federatedCalendars = $this->federatedCalendarMapper->findByPrincipalUri($principalUri);
+			return array_map(
+				static fn (FederatedCalendarEntity $entity) => $entity->toCalendarInfo(),
+				$federatedCalendars,
+			);
+		}, $this->db);
+	}
+
+	public function getFederatedCalendarByUri(string $principalUri, string $uri): ?array {
+		return $this->atomic(function () use ($principalUri, $uri) {
+			$federatedCalendar = $this->federatedCalendarMapper->findByUri($principalUri, $uri);
+			return $federatedCalendar?->toCalendarInfo();
 		}, $this->db);
 	}
 }

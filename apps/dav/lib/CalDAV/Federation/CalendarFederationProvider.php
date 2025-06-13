@@ -9,14 +9,12 @@ declare(strict_types=1);
 
 namespace OCA\DAV\CalDAV\Federation;
 
-use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\DAV\CalDAV\Federation\Protocol\CalendarFederationProtocolV1;
 use OCA\DAV\CalDAV\Federation\Protocol\ICalendarFederationProtocol;
 use OCP\AppFramework\Http;
 use OCP\Federation\Exceptions\ProviderCouldNotAddShareException;
 use OCP\Federation\ICloudFederationProvider;
 use OCP\Federation\ICloudFederationShare;
-use OCP\Federation\ICloudIdManager;
 use Psr\Log\LoggerInterface;
 
 class CalendarFederationProvider implements ICloudFederationProvider {
@@ -24,9 +22,7 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 	public const CALENDAR_RESOURCE = 'calendar';
 
 	public function __construct(
-		private readonly CalDavBackend $calDavBackend,
 		private readonly LoggerInterface $logger,
-		private readonly ICloudIdManager $cloudIdManager,
 		private readonly FederatedCalendarMapper $federatedCalendarMapper,
 	) {
 	}
@@ -38,11 +34,20 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 	public function shareReceived(ICloudFederationShare $share): string {
 		if (!$this->isFederationEnabled()) {
 			$this->logger->debug('Received a federation invite but federation is disabled');
-			throw new ProviderCouldNotAddShareException('Server does not support talk federation', '', Http::STATUS_SERVICE_UNAVAILABLE);
+			throw new ProviderCouldNotAddShareException(
+				'Server does not support talk federation',
+				'',
+				Http::STATUS_SERVICE_UNAVAILABLE,
+			);
 		}
+
 		if (!in_array($share->getShareType(), $this->getSupportedShareTypes(), true)) {
 			$this->logger->debug('Received a federation invite for invalid share type');
-			throw new ProviderCouldNotAddShareException('Support for sharing with non-users not implemented yet', '', Http::STATUS_NOT_IMPLEMENTED);
+			throw new ProviderCouldNotAddShareException(
+				'Support for sharing with non-users not implemented yet',
+				'',
+				Http::STATUS_NOT_IMPLEMENTED,
+			);
 			// TODO: Implement group shares
 		}
 
@@ -50,7 +55,15 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		// TODO: test what happens if no version in protocol
 		switch ($rawProtocol[ICalendarFederationProtocol::PROP_VERSION]) {
 			case CalendarFederationProtocolV1::VERSION:
-				$protocol = CalendarFederationProtocolV1::parse($rawProtocol);
+				try {
+					$protocol = CalendarFederationProtocolV1::parse($rawProtocol);
+				} catch (Protocol\CalendarProtocolParseException $e) {
+					throw new ProviderCouldNotAddShareException(
+						'Invalid protocol data (v1)',
+						'',
+						Http::STATUS_BAD_REQUEST,
+					);
+				}
 				$calendarUrl = $protocol->getUrl();
 				$displayName = $protocol->getDisplayName();
 				$color = $protocol->getColor();
@@ -72,8 +85,9 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 			);
 		}
 
-		//$sharedBy = $this->cloudIdManager->resolveCloudId($share->getSharedBy());
-
+		// The calendar uri is the local name of the calendar. As such it must not contain slashes.
+		// Just use the hashed url for simplicity here.
+		// Example: calendars/foo-bar-user/<calendar-uri>
 		$calendarUri = hash('md5', $calendarUrl);
 
 		$sharedWithPrincipal = 'principals/users/' . $share->getShareWith();
@@ -95,7 +109,6 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		$calendar->setRemoteUrl($calendarUrl);
 		$calendar->setDisplayName($displayName);
 		$calendar->setColor($color);
-		$calendar->setPermissions(1); // TODO: handle permissions
 		$calendar->setToken($share->getShareSecret());
 		$calendar->setSharedBy($share->getSharedBy());
 		$calendar->setSharedByDisplayName($share->getSharedByDisplayName());
@@ -105,7 +118,6 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 	}
 
 	public function notificationReceived($notificationType, $providerId, array $notification) {
-		// TODO: Implement notificationReceived() method.
 	}
 
 	/**

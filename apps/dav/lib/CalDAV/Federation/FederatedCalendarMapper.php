@@ -62,6 +62,9 @@ class FederatedCalendarMapper extends QBMapper {
 			return $this->findEntity($qb);
 		} catch (DoesNotExistException $e) {
 			return null;
+		} catch (MultipleObjectsReturnedException $e) {
+			// Should never happen
+			return null;
 		}
 	}
 
