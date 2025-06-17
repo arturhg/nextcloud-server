@@ -852,7 +852,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	 * @return array
 	 */
 	public function getChangesForAddressBook($addressBookId, $syncToken, $syncLevel, $limit = null) {
-		$maxLimit = $this->config->getSystemValueInt('carddav_sync_request_truncation', 50000);
+		$maxLimit = $this->config->getSystemValueInt('carddav_sync_request_truncation', 5000);
 		$limit = ($limit === null) ? $maxLimit : min($limit, $maxLimit);
 		// Current synctoken
 		return $this->atomic(function () use ($addressBookId, $syncToken, $syncLevel, $limit) {
@@ -899,7 +899,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 				} else {
 					$lastID = $values[array_key_last($values)]['id'];
 					$result['added'] = array_column($values, 'uri');
-					$result['syncToken'] = count($result['added']) >= $limit ? "init_{$lastID}_$initialSyncToken" : $initialSyncToken ;
+					$result['syncToken'] = count($result['added']) >= $limit ? "init_{$lastID}_$initialSyncToken" : $initialSyncToken;
 					$result['result_truncated'] = count($result['added']) >= $limit;
 				}
 			} elseif ($syncToken) {
