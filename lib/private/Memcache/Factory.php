@@ -175,7 +175,7 @@ class Factory implements ICacheFactory {
 	 * @return ICache
 	 */
 	public function createLocal(string $prefix = ''): ICache {
-		$globalPrefix = $this->getGlobalPrefix();
+		$globalPrefix = 'prefix';
 		if (is_null($globalPrefix)) {
 			return new ArrayCache($prefix);
 		}
