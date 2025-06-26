@@ -12,7 +12,7 @@ use OC\Share20\GroupDeletedListener;
 use OC\Share20\Hooks;
 use OC\Share20\UserDeletedListener;
 use OC\Share20\UserRemovedListener;
-use OC\User\LoginException;
+use OC\User\DisabledUserException;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\Events\BeforeFileSystemSetupEvent;
 use OCP\Group\Events\GroupDeletedEvent;
@@ -1028,7 +1028,7 @@ class OC {
 				if ($request->getRawPathInfo() !== '/apps/oauth2/api/v1/token') {
 					try {
 						self::handleLogin($request);
-					} catch (LoginException $e) {
+					} catch (DisabledUserException $e) {
 						// Disabled users would not be seen as logged in and
 						// trying to log them in would fail, so the login
 						// exception is ignored for the themed stylesheets and
