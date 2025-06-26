@@ -8,7 +8,7 @@ import FolderSvg from '@mdi/svg/svg/folder.svg?raw'
 import { getContents } from '../services/Files'
 import { View, getNavigation } from '@nextcloud/files'
 
-export default () => {
+export const registerFilesView = () => {
 	const Navigation = getNavigation()
 	Navigation.register(new View({
 		id: 'files',
