@@ -21,7 +21,7 @@ class TrustedServerRemovedEvent extends Event {
 	 */
 	public function __construct(
 		private readonly string $url,
-		private readonly string $urlHash
+		private readonly string $urlHash,
 	) {
 		parent::__construct();
 	}
