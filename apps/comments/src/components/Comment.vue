@@ -26,7 +26,7 @@
 						<NcActionButton close-after-click
 							@click="onEdit">
 							<template #icon>
-								<IconEdit :size="20" />
+								<PencilOutlineIcon :size="20" />
 							</template>
 							{{ t('comments', 'Edit comment') }}
 						</NcActionButton>
@@ -34,7 +34,7 @@
 						<NcActionButton close-after-click
 							@click="onDeleteWithUndo">
 							<template #icon>
-								<IconDelete :size="20" />
+								<TrashCanOutlineIcon :size="20" />
 							</template>
 							{{ t('comments', 'Delete comment') }}
 						</NcActionButton>
@@ -42,7 +42,7 @@
 
 					<NcActionButton v-else @click="onEditCancel">
 						<template #icon>
-							<IconClose :size="20" />
+							<CloseIcon :size="20" />
 						</template>
 						{{ t('comments', 'Cancel edit') }}
 					</NcActionButton>
@@ -79,7 +79,7 @@
 							@click="onSubmit">
 							<template #icon>
 								<NcLoadingIcon v-if="loading" />
-								<IconArrowRight v-else :size="20" />
+								<ArrowRightIcon v-else :size="20" />
 							</template>
 						</NcButton>
 					</div>
@@ -113,10 +113,10 @@ import NcDateTime from '@nextcloud/vue/components/NcDateTime'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcUserBubble from '@nextcloud/vue/components/NcUserBubble'
 
-import IconArrowRight from 'vue-material-design-icons/ArrowRight.vue'
-import IconClose from 'vue-material-design-icons/Close.vue'
-import IconDelete from 'vue-material-design-icons/Delete.vue'
-import IconEdit from 'vue-material-design-icons/Pencil.vue'
+import ArrowRightIcon from 'vue-material-design-icons/ArrowRight.vue'
+import CloseIcon from 'vue-material-design-icons/Close.vue'
+import TrashCanOutlineIcon from 'vue-material-design-icons/TrashCanOutline.vue'
+import PencilOutlineIcon from 'vue-material-design-icons/PencilOutline.vue'
 
 import CommentMixin from '../mixins/CommentMixin.js'
 import { mapStores } from 'pinia'
@@ -130,10 +130,10 @@ export default {
 	name: 'Comment',
 
 	components: {
-		IconArrowRight,
-		IconClose,
-		IconDelete,
-		IconEdit,
+		ArrowRightIcon,
+		CloseIcon,
+		TrashCanOutlineIcon,
+		PencilOutlineIcon,
 		NcActionButton,
 		NcActions,
 		NcActionSeparator,

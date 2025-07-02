@@ -22,7 +22,7 @@
 				class="comments__empty"
 				:name="t('comments', 'No comments yet, start the conversation!')">
 				<template #icon>
-					<MessageReplyTextIcon />
+					<MessageReplyTextOutlineIcon />
 				</template>
 			</NcEmptyContent>
 			<ul v-else>
@@ -73,7 +73,7 @@ import { vElementVisibility as elementVisibility } from '@vueuse/components'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import RefreshIcon from 'vue-material-design-icons/Refresh.vue'
-import MessageReplyTextIcon from 'vue-material-design-icons/MessageReplyText.vue'
+import MessageReplyTextOutlineIcon from 'vue-material-design-icons/MessageReplyTextOutline.vue'
 import AlertCircleOutlineIcon from 'vue-material-design-icons/AlertCircleOutline.vue'
 
 import Comment from '../components/Comment.vue'
@@ -90,7 +90,7 @@ export default {
 		NcEmptyContent,
 		NcButton,
 		RefreshIcon,
-		MessageReplyTextIcon,
+		MessageReplyTextOutlineIcon,
 		AlertCircleOutlineIcon,
 	},
 
