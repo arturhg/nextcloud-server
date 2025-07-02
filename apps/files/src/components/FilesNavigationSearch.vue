@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import { mdiMagnify, mdiSearchWeb } from '@mdi/js'
+import { mdiFilter, mdiMagnify, mdiSearchWeb } from '@mdi/js'
 import { t } from '@nextcloud/l10n'
 import { computed } from 'vue'
 import NcActions from '@nextcloud/vue/components/NcActions'
@@ -68,6 +68,18 @@ const canSearchLocally = computed(() => {
 })
 
 /**
+ * The icon to be used for the current search scope
+ */
+const currentSearchIcon = computed(() => {
+	if (searchStore.scope === 'globally') {
+		return mdiSearchWeb
+	} else if (searchStore.scope === 'locally') {
+		return mdiMagnify
+	}
+	return mdiFilter
+})
+
+/**
  * Different searchbox label depending if filtering or searching
  */
 const searchLabel = computed(() => {
@@ -96,11 +108,11 @@ function onUpdateSearch(value: string) {
 		<template #actions>
 			<NcActions :aria-label="t('files', 'Search scope options')" :disabled="isSearchView">
 				<template #icon>
-					<NcIconSvgWrapper :path="searchStore.scope === 'globally' ? mdiSearchWeb : mdiMagnify" />
+					<NcIconSvgWrapper :path="currentSearchIcon" />
 				</template>
 				<NcActionButton close-after-click @click="searchStore.scope = 'filter'">
 					<template #icon>
-						<NcIconSvgWrapper :path="mdiMagnify" />
+						<NcIconSvgWrapper :path="mdiFilter" />
 					</template>
 					{{ t('files', 'Filter in current view') }}
 				</NcActionButton>
